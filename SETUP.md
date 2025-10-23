@@ -262,7 +262,6 @@ If you encounter issues:
 - **JavaScript ES6 Modules**: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 - **Manifest V3 Migration**: https://developer.chrome.com/docs/extensions/mv3/intro/
 
----
 
-Good luck building with Hilo! 🚀
+
 

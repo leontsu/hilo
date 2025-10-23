@@ -123,6 +123,49 @@ body {
   font-style: italic;
 }
 
+.ai-status {
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.05), rgba(0, 123, 255, 0.1));
+  border: 1px solid rgba(0, 123, 255, 0.2);
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 16px;
+}
+
+.ai-status h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-capabilities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ai-capability {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.ai-capability.available {
+  background: rgba(40, 167, 69, 0.1);
+  color: #155724;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.ai-capability.unavailable {
+  background: rgba(108, 117, 125, 0.1);
+  color: #495057;
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
 .usage-info {
   background: #f8f9fa;
   padding: 12px;

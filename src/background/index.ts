@@ -1,10 +1,18 @@
-import { simplifyText, simplifyCaptions } from '../lib/ai'
+import { 
+  simplifyTextAI, 
+  simplifyCaptionsAI, 
+  generateQuizAI, 
+  translateTextAI,
+  checkAICapabilities
+} from '../lib/ai'
 import { getSettings } from '../lib/storage'
 import type { 
   MessageRequest, 
   MessageResponse, 
   SimplificationRequest, 
-  CaptionSimplificationRequest 
+  CaptionSimplificationRequest,
+  QuizRequest,
+  TranslationRequest
 } from '../types'
 
 // Handle installation
@@ -55,6 +63,15 @@ async function handleMessage(
       case 'SIMPLIFY_CAPTIONS':
         return await handleCaptionSimplification(request as CaptionSimplificationRequest)
       
+      case 'GENERATE_QUIZ':
+        return await handleQuizGeneration(request as QuizRequest)
+      
+      case 'TRANSLATE_TEXT':
+        return await handleTranslation(request as TranslationRequest)
+      
+      case 'CHECK_AI_CAPABILITIES':
+        return await handleAICapabilityCheck()
+      
       default:
         return {
           success: false,
@@ -86,8 +103,8 @@ async function handleTextSimplification(
       }
     }
 
-    // Simplify the text
-    const result = simplifyText(request.text, settings)
+    // Simplify the text using AI
+    const result = await simplifyTextAI(request.text, settings)
     
     return {
       success: true,
@@ -118,8 +135,8 @@ async function handleCaptionSimplification(
       }
     }
 
-    // Simplify the captions
-    const simplifiedLines = simplifyCaptions(request.lines, settings)
+    // Simplify the captions using AI
+    const simplifiedLines = await simplifyCaptionsAI(request.lines, settings)
     
     return {
       success: true,
@@ -143,6 +160,87 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   }
 })
+
+async function handleQuizGeneration(
+  request: QuizRequest
+): Promise<MessageResponse> {
+  try {
+    // Get current settings (override with request settings if provided)
+    const currentSettings = await getSettings()
+    const settings = { ...currentSettings, ...request.settings }
+    
+    // Validate input
+    if (!request.text || request.text.trim().length === 0) {
+      return {
+        success: false,
+        error: 'No text provided for quiz generation'
+      }
+    }
+
+    // Generate quiz using AI
+    const result = await generateQuizAI(request.text, settings)
+    
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Quiz generation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Quiz generation failed'
+    }
+  }
+}
+
+async function handleTranslation(
+  request: TranslationRequest
+): Promise<MessageResponse> {
+  try {
+    // Get current settings (override with request settings if provided)
+    const currentSettings = await getSettings()
+    const settings = { ...currentSettings, ...request.settings }
+    
+    // Validate input
+    if (!request.text || request.text.trim().length === 0) {
+      return {
+        success: false,
+        error: 'No text provided for translation'
+      }
+    }
+
+    // Translate text using AI
+    const result = await translateTextAI(request.text, settings)
+    
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Translation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Translation failed'
+    }
+  }
+}
+
+async function handleAICapabilityCheck(): Promise<MessageResponse> {
+  try {
+    const capabilities = await checkAICapabilities()
+    
+    return {
+      success: true,
+      data: capabilities
+    }
+  } catch (error) {
+    console.error('AI capability check error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'AI capability check failed'
+    }
+  }
+}
 
 // Handle storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, namespace) => {

@@ -17,6 +17,8 @@ export interface SimplificationResponse {
   simplified: string
   summary?: string
   originalText: string
+  translation?: string
+  quiz?: QuizQuestion[]
 }
 
 export interface CaptionSimplificationRequest {
@@ -42,10 +44,56 @@ export interface SimplifiedCaptionLine {
   simplified: string
 }
 
-export type MessageRequest = SimplificationRequest | CaptionSimplificationRequest
+// Quiz types
+export interface QuizQuestion {
+  id: string
+  question: string
+  options: string[]
+  correctAnswer: number
+  explanation?: string
+}
+
+export interface QuizRequest {
+  type: 'GENERATE_QUIZ'
+  text: string
+  settings: UserSettings
+}
+
+export interface QuizResponse {
+  questions: QuizQuestion[]
+  originalText: string
+}
+
+// Translation types
+export interface TranslationRequest {
+  type: 'TRANSLATE_TEXT'
+  text: string
+  settings: UserSettings
+}
+
+export interface TranslationResponse {
+  translatedText: string
+  originalText: string
+  sourceLanguage: string
+  targetLanguage: string
+}
+
+// AI Service types
+export interface AICapabilities {
+  languageModel: boolean
+  summarizer: boolean
+  translator: boolean
+  writer: boolean
+}
+
+export type MessageRequest = 
+  | SimplificationRequest 
+  | CaptionSimplificationRequest
+  | QuizRequest
+  | TranslationRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse
+  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse
   error?: string
 }

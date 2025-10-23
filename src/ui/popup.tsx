@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getSettings, saveSettings } from '../lib/storage'
-import type { CEFRLevel, OutputLanguage, UserSettings } from '../types'
+import type { CEFRLevel, OutputLanguage, UserSettings, AICapabilities } from '../types'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string }[] = [
   { value: 'A1', label: 'A1 - Beginner', description: 'Very simple words and phrases' },
@@ -22,11 +22,18 @@ const PopupApp: React.FC = () => {
     outputLanguage: 'en',
     enabled: true
   })
+  const [aiCapabilities, setAiCapabilities] = useState<AICapabilities>({
+    languageModel: false,
+    summarizer: false,
+    translator: false,
+    writer: false
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadSettings()
+    checkAICapabilities()
   }, [])
 
   const loadSettings = async () => {
@@ -37,6 +44,17 @@ const PopupApp: React.FC = () => {
       console.error('Error loading settings:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkAICapabilities = async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'CHECK_AI_CAPABILITIES' })
+      if (response.success) {
+        setAiCapabilities(response.data)
+      }
+    } catch (error) {
+      console.error('Error checking AI capabilities:', error)
     }
   }
 
@@ -121,11 +139,31 @@ const PopupApp: React.FC = () => {
           </select>
         </div>
 
+        <div className="ai-status">
+          <h3>AI Capabilities:</h3>
+          <div className="ai-capabilities">
+            <div className={`ai-capability ${aiCapabilities.languageModel ? 'available' : 'unavailable'}`}>
+              {aiCapabilities.languageModel ? '🤖' : '📚'} Simplification: {aiCapabilities.languageModel ? 'AI' : 'Local'}
+            </div>
+            <div className={`ai-capability ${aiCapabilities.writer ? 'available' : 'unavailable'}`}>
+              {aiCapabilities.writer ? '🤖' : '📝'} Quiz Generation: {aiCapabilities.writer ? 'AI' : 'Local'}
+            </div>
+            <div className={`ai-capability ${aiCapabilities.translator ? 'available' : 'unavailable'}`}>
+              {aiCapabilities.translator ? '🤖' : '🌐'} Translation: {aiCapabilities.translator ? 'AI' : 'Local'}
+            </div>
+            <div className={`ai-capability ${aiCapabilities.summarizer ? 'available' : 'unavailable'}`}>
+              {aiCapabilities.summarizer ? '🤖' : '📄'} Summarization: {aiCapabilities.summarizer ? 'AI' : 'Local'}
+            </div>
+          </div>
+        </div>
+
         <div className="usage-info">
           <h3>How to use:</h3>
           <ul>
             <li>Select text on any webpage (8+ characters)</li>
-            <li>Click "Simplify" to get easier version</li>
+            <li>Click "Simplify" for easier version {aiCapabilities.languageModel && '(AI-powered)'}</li>
+            <li>Click "Quiz" to test comprehension {aiCapabilities.writer && '(AI-generated)'}</li>
+            <li>Click "Translate" for language support {aiCapabilities.translator && '(AI-powered)'}</li>
             <li>For YouTube: Enable "EASY" button for captions</li>
           </ul>
         </div>
