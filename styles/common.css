@@ -1,0 +1,351 @@
+/**
+ * Common Styles
+ * Shared CSS variables and utility classes for Hilo extension
+ */
+
+:root {
+  /* Colors */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  
+  --color-secondary: #6b7280;
+  --color-secondary-light: #f3f4f6;
+  
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #065f46;
+  
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-error-dark: #991b1b;
+  
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #92400e;
+  
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+  --color-info-dark: #1e40af;
+  
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-light: #9ca3af;
+  
+  --color-background: #ffffff;
+  --color-background-secondary: #f9fafb;
+  --color-background-tertiary: #f3f4f6;
+  
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-border-dark: #d1d5db;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 28px;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+}
+
+/* Reset & Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+/* Utility Classes */
+
+/* Display */
+.hidden {
+  display: none !important;
+}
+
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.flex {
+  display: flex;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+/* Flexbox */
+.flex-row {
+  flex-direction: row;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+/* Text */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-xs {
+  font-size: var(--font-size-xs);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+
+.text-md {
+  font-size: var(--font-size-md);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+}
+
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+/* Colors */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+/* Spacing */
+.m-0 { margin: 0; }
+.mt-1 { margin-top: var(--space-xs); }
+.mt-2 { margin-top: var(--space-sm); }
+.mt-3 { margin-top: var(--space-md); }
+.mt-4 { margin-top: var(--space-lg); }
+
+.mb-1 { margin-bottom: var(--space-xs); }
+.mb-2 { margin-bottom: var(--space-sm); }
+.mb-3 { margin-bottom: var(--space-md); }
+.mb-4 { margin-bottom: var(--space-lg); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--space-xs); }
+.p-2 { padding: var(--space-sm); }
+.p-3 { padding: var(--space-md); }
+.p-4 { padding: var(--space-lg); }
+
+/* Borders */
+.border {
+  border: 1px solid var(--color-border);
+}
+
+.border-t {
+  border-top: 1px solid var(--color-border);
+}
+
+.border-b {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.rounded {
+  border-radius: var(--radius-md);
+}
+
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+
+.rounded-xl {
+  border-radius: var(--radius-xl);
+}
+
+.rounded-full {
+  border-radius: var(--radius-full);
+}
+
+/* Shadows */
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal);
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-normal);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+

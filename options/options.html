@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilo Settings</title>
+  <link rel="stylesheet" href="../styles/common.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚙️ Hilo Settings</h1>
+      <p class="subtitle">Customize your language learning experience</p>
+    </header>
+
+    <main>
+      <!-- Learning Level -->
+      <section class="settings-section">
+        <h2>Learning Level</h2>
+        <p class="description">Select your current English proficiency level (CEFR scale)</p>
+        
+        <div class="level-cards">
+          <label class="level-card">
+            <input type="radio" name="level" value="A1">
+            <div class="card-content">
+              <div class="level-title">A1</div>
+              <div class="level-desc">Beginner</div>
+            </div>
+          </label>
+          
+          <label class="level-card">
+            <input type="radio" name="level" value="A2">
+            <div class="card-content">
+              <div class="level-title">A2</div>
+              <div class="level-desc">Elementary</div>
+            </div>
+          </label>
+          
+          <label class="level-card">
+            <input type="radio" name="level" value="B1" checked>
+            <div class="card-content">
+              <div class="level-title">B1</div>
+              <div class="level-desc">Intermediate</div>
+            </div>
+          </label>
+          
+          <label class="level-card">
+            <input type="radio" name="level" value="B2">
+            <div class="card-content">
+              <div class="level-title">B2</div>
+              <div class="level-desc">Upper Intermediate</div>
+            </div>
+          </label>
+          
+          <label class="level-card">
+            <input type="radio" name="level" value="C1">
+            <div class="card-content">
+              <div class="level-title">C1</div>
+              <div class="level-desc">Advanced</div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Translation Settings -->
+      <section class="settings-section">
+        <h2>Translation</h2>
+        <p class="description">Choose your native or target language for translations</p>
+        
+        <label for="target-language" class="form-label">Target Language:</label>
+        <select id="target-language" class="form-select">
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+          <option value="Italian">Italian</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Japanese">Japanese</option>
+          <option value="Chinese">Chinese</option>
+          <option value="Korean">Korean</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Russian">Russian</option>
+        </select>
+      </section>
+
+      <!-- Features -->
+      <section class="settings-section">
+        <h2>Features</h2>
+        <p class="description">Enable or disable specific features</p>
+        
+        <div class="toggle-group">
+          <label class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">Context Menu</div>
+              <div class="toggle-desc">Show Hilo options when right-clicking selected text</div>
+            </div>
+            <input type="checkbox" id="enable-context-menu" class="toggle-checkbox" checked>
+            <span class="toggle-switch"></span>
+          </label>
+
+          <label class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">YouTube Auto-Detect</div>
+              <div class="toggle-desc">Automatically detect and offer to simplify YouTube captions</div>
+            </div>
+            <input type="checkbox" id="auto-detect-youtube" class="toggle-checkbox" checked>
+            <span class="toggle-switch"></span>
+          </label>
+
+          <label class="toggle-item">
+            <div class="toggle-info">
+              <div class="toggle-title">Highlight Simplified Text</div>
+              <div class="toggle-desc">Highlight text on the page after simplification</div>
+            </div>
+            <input type="checkbox" id="highlight-text" class="toggle-checkbox">
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="settings-section">
+        <h2>About</h2>
+        <div class="about-content">
+          <p><strong>Hilo</strong> - Language Learning Assistant</p>
+          <p>Version 1.0.0</p>
+          <p class="description">
+            Hilo helps language learners by simplifying web content and YouTube captions 
+            based on their proficiency level using Chrome's Built-in AI APIs.
+          </p>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <div class="save-section">
+        <button id="save-btn" class="btn-save">Save Settings</button>
+        <div id="status-message" class="status-message hidden"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
+

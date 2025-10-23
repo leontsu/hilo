@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilo - Language Learning Assistant</title>
+  <link rel="stylesheet" href="../styles/common.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Hilo</h1>
+      <p class="tagline">Simplify. Learn. Grow.</p>
+    </header>
+
+    <main>
+      <!-- Level Selection -->
+      <section class="level-section">
+        <label for="level-select">Your Level:</label>
+        <select id="level-select" class="level-select">
+          <option value="A1">A1 - Beginner</option>
+          <option value="A2">A2 - Elementary</option>
+          <option value="B1" selected>B1 - Intermediate</option>
+          <option value="B2">B2 - Upper Intermediate</option>
+          <option value="C1">C1 - Advanced</option>
+        </select>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="actions">
+        <button id="simplify-btn" class="btn btn-primary">
+          <span class="btn-icon">📝</span>
+          Simplify Selection
+        </button>
+        
+        <button id="quiz-btn" class="btn btn-secondary">
+          <span class="btn-icon">❓</span>
+          Generate Quiz
+        </button>
+        
+        <button id="translate-btn" class="btn btn-secondary">
+          <span class="btn-icon">🌐</span>
+          Translate
+        </button>
+      </section>
+
+      <!-- Status Message -->
+      <div id="status" class="status hidden"></div>
+
+      <!-- Results Area -->
+      <div id="results" class="results hidden"></div>
+    </main>
+
+    <footer>
+      <a href="#" id="options-link" class="link">⚙️ Settings</a>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
+
