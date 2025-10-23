@@ -1,340 +1,263 @@
-# 🎓 Hilo - Language Learning Chrome Extension
+# LevelLens - Adaptive Translator for the Real Web
 
-**Simplify. Learn. Grow.**
+![LevelLens Logo](https://img.shields.io/badge/LevelLens-Adaptive%20Translator-blue)
+![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue)
+![MIT License](https://img.shields.io/badge/License-MIT-yellow)
 
-Hilo is a Chrome Extension that simplifies website text and YouTube captions based on your language learning level (A1–C1 CEFR scale), powered by Chrome's Built-in AI APIs.
+**LevelLens** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
 
----
+Built for the **Google Chrome Built-in AI Challenge 2025**, LevelLens prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities.
 
-## 📋 Features
+## 🌟 Features
 
-- **Text Simplification** - Rewrite complex text to match your proficiency level
-- **Quiz Generation** - Create comprehension exercises from any text
-- **Translation** - Translate simplified text to your native language
-- **YouTube Support** - Simplify YouTube captions on-the-fly
-- **Context Menu Integration** - Right-click any selected text to simplify
-- **CEFR Level Support** - A1 (Beginner) through C1 (Advanced)
-- **Chrome AI Powered** - Uses Chrome's Built-in Prompt, Summarizer, Writer, and Translator APIs
+### Core Functionality
+- **Text Simplification**: Select any text on web pages (8+ characters) to get simplified versions
+- **YouTube Caption Adaptation**: Real-time caption simplification with easy toggle
+- **CEFR Level Support**: Choose from A1 (Beginner) to C1 (Advanced) complexity levels
+- **Multi-language Output**: English and Japanese language support
+- **Privacy-First**: Local processing with optional AI enhancement
 
----
+### User Experience
+- **Shadow DOM Integration**: No interference with existing page styles
+- **Instant Feedback**: Real-time simplification with summary tooltips
+- **Keyboard Accessible**: Full keyboard navigation support
+- **Responsive Design**: Works on all screen sizes
+- **Dark Mode Support**: Automatic theme adaptation
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-1. **Chrome Canary or Dev Channel** (v120+)
-2. **Enable Chrome AI flags** at `chrome://flags`:
-   - `#optimization-guide-on-device-model` - Enabled
-   - `#prompt-api-for-gemini-nano` - Enabled
-   - `#summarization-api-for-gemini-nano` - Enabled
-   - `#translation-api` - Enabled
+- Google Chrome (version 88+)
+- Node.js (version 16+)
+- npm or yarn
 
 ### Installation
 
-1. Clone this repository:
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/hilo.git
-   cd hilo
+   git clone https://github.com/your-username/levellens-react.git
+   cd levellens-react
    ```
 
-2. Open Chrome and navigate to `chrome://extensions/`
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-3. Enable **Developer mode** (toggle in top-right corner)
+3. **Build the extension**
+   ```bash
+   npm run build
+   ```
 
-4. Click **Load unpacked** and select the `hilo` directory
+4. **Load into Chrome**
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top right)
+   - Click "Load unpacked"
+   - Select the `dist` folder from your project
 
-5. The Hilo extension should now appear in your extensions toolbar
+### Development Mode
 
----
+For active development with hot reload:
 
-## 📁 Project Structure
-
-```
-hilo/
-├── manifest.json              # Extension configuration
-├── prompts.js                 # AI prompt templates
-├── README.md                  # This file
-│
-├── popup/                     # Extension popup UI
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.js
-│
-├── content/                   # Content scripts (injected into pages)
-│   ├── content.js
-│   └── content.css
-│
-├── background/                # Service worker
-│   └── background.js
-│
-├── options/                   # Settings page
-│   ├── options.html
-│   ├── options.css
-│   └── options.js
-│
-├── scripts/                   # Shared utilities
-│   ├── aiService.js          # Chrome AI API wrapper
-│   ├── storage.js            # chrome.storage wrapper
-│   └── utils.js              # Helper functions
-│
-├── styles/                    # Shared styles
-│   └── common.css
-│
-└── icons/                     # Extension icons
-    ├── icon16.png
-    ├── icon32.png
-    ├── icon48.png
-    └── icon128.png
+```bash
+npm run dev
 ```
 
----
+Then load the extension from the `dist` folder as described above. Changes will automatically reload.
 
-## 🎯 Usage
+## 📖 Usage Guide
 
-### Basic Workflow
+### Web Pages
+1. **Select Text**: Highlight any text on a webpage (minimum 8 characters)
+2. **Click Simplify**: A toolbar will appear above your selection
+3. **View Results**: The simplified text appears in an overlay with a summary
+4. **Clear Overlays**: Use the "Clear" button to remove all simplifications
 
-1. **Set Your Level**: Click the Hilo icon and select your CEFR level (A1-C1)
-
-2. **Select Text**: Highlight any text on a webpage
-
-3. **Simplify**:
-   - Click the Hilo icon → "Simplify Selection"
-   - OR right-click → "Hilo - Simplify Text"
-
-4. **Generate Quiz**: After simplifying, click "Generate Quiz" to test comprehension
-
-5. **Translate**: Click "Translate" to see the text in your native language
-
-### YouTube Captions
-
-1. Open any YouTube video with captions
-2. Select caption text
-3. Use Hilo to simplify at your level
+### YouTube
+1. **Visit YouTube**: Navigate to any YouTube video
+2. **Enable EASY Mode**: Click the "EASY" button that appears on the video
+3. **Simplified Captions**: Captions will be automatically simplified and displayed at the bottom
 
 ### Settings
+- **Access Settings**: Click the LevelLens icon in Chrome's toolbar
+- **Choose Level**: Select your CEFR level (A1-C1)
+- **Set Language**: Choose English or Japanese output
+- **Advanced Options**: Click "Advanced Settings" for detailed configuration
 
-Access settings by clicking ⚙️ in the popup or via `chrome://extensions` → Hilo → Options
+## ⚙️ Configuration
 
-Configure:
-- Default learning level
-- Target translation language
-- Context menu options
-- YouTube auto-detection
+### CEFR Levels
+- **A1 (Beginner)**: Very simple words and phrases
+- **A2 (Elementary)**: Common everyday expressions
+- **B1 (Intermediate)**: Clear standard language
+- **B2 (Upper Intermediate)**: Complex topics and ideas
+- **C1 (Advanced)**: Flexible and effective language
 
----
+### Storage
+All settings are automatically synced across your Chrome browsers using `chrome.storage.sync`.
 
-## 🧪 Chrome AI APIs Used
+## 🔧 Development
 
-### Prompt API
-```javascript
-const session = await ai.languageModel.create({
-  systemPrompt: 'You are a language learning assistant...',
-  temperature: 0.7
-});
-const result = await session.prompt(promptText);
+### Project Structure
+```
+levellens-react/
+├── src/
+│   ├── manifest.ts          # Chrome extension manifest
+│   ├── background/
+│   │   └── index.ts         # Service worker for message handling
+│   ├── content/
+│   │   ├── index.tsx        # Main content script with React
+│   │   ├── youtube.ts       # YouTube-specific functionality
+│   │   └── styles.css       # Content script styles
+│   ├── ui/
+│   │   ├── popup.tsx        # Extension popup interface
+│   │   ├── options.tsx      # Settings page
+│   │   ├── ui.css          # UI component styles
+│   │   ├── popup.html      # Popup HTML template
+│   │   └── options.html    # Options HTML template
+│   ├── lib/
+│   │   ├── ai.ts           # Simplification logic (stub + AI)
+│   │   └── storage.ts      # Chrome storage utilities
+│   └── types.d.ts          # TypeScript type definitions
+├── vite.config.ts          # Vite build configuration
+├── tsconfig.json           # TypeScript configuration
+└── package.json            # Project dependencies
 ```
 
-### Summarizer API
-```javascript
-const summarizer = await ai.summarizer.create({
-  type: 'tl;dr',
-  format: 'plain-text',
-  length: 'short'
-});
-const summary = await summarizer.summarize(text);
-```
-
-### Translator API
-```javascript
-const translator = await translation.createTranslator({
-  sourceLanguage: 'en',
-  targetLanguage: 'es'
-});
-const result = await translator.translate(text);
-```
-
----
-
-## 🛠️ Development
+### Available Scripts
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run type-check` - Run TypeScript type checking
 
 ### Tech Stack
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite with @crxjs/vite-plugin
+- **Extension API**: Chrome Manifest V3
+- **Styling**: Pure CSS with CSS custom properties
+- **Architecture**: Content Scripts + Background Service Worker
 
-- **Manifest V3** - Latest Chrome Extension format
-- **Vanilla JavaScript** - No frameworks, pure ES6+ modules
-- **CSS3** - Modern styling with CSS variables
-- **Chrome Built-in AI** - On-device AI processing
+## 🤖 Chrome Built-in AI Integration
 
-### Key Files
+LevelLens is designed to seamlessly integrate with Chrome's Built-in AI APIs. The current implementation uses local simplification stubs that can be easily replaced.
 
-#### `prompts.js`
-Contains all AI prompt templates:
-- `buildSimplificationPrompt(level, text)`
-- `buildQuizPrompt(text, level)`
-- `buildTranslationPrompt(targetLang, text)`
-- `buildContextualSimplificationPrompt(level, text, contentType)`
-- `buildSummaryPrompt(level, text, maxSentences)`
+### AI Replacement Guide
 
-#### `scripts/aiService.js`
-Wrapper for Chrome AI APIs:
-- `simplifyText(level, text, contentType)`
-- `generateQuiz(text, level)`
-- `translateText(targetLang, text)`
-- `summarizeText(level, text, maxSentences)`
-- `checkAIAvailability()`
+1. **Update `src/lib/ai.ts`**:
+   Replace the stub functions with Chrome AI calls:
 
-#### `scripts/storage.js`
-Chrome storage management:
-- `getStoredSettings()` / `setStoredSettings(settings)`
-- `getStoredLevel()` / `setStoredLevel(level)`
-- `saveToHistory(entry)` / `getHistory(limit)`
+   ```typescript
+   // Replace simplifyText function
+   export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
+     const session = await chrome.aiOriginTrial.languageModel.create({
+       systemPrompt: `Simplify text to CEFR ${settings.level} level...`
+     });
+     
+     const result = await session.prompt(`Simplify: ${text}`);
+     return {
+       simplified: result,
+       summary: result.substring(0, 60) + '...',
+       originalText: text
+     };
+   }
+   ```
 
-### Testing
+2. **Update function calls**:
+   Replace `simplifyText` calls with `simplifyTextAI` in `src/background/index.ts`
 
-1. Make changes to source files
-2. Go to `chrome://extensions`
-3. Click the refresh icon on Hilo extension
-4. Test on various websites
+3. **Add AI permissions**:
+   Update `src/manifest.ts` to include AI origin trial permissions
 
-### Debugging
+### AI Features Roadmap
+- Real-time translation
+- Context-aware simplification
+- Personalized difficulty adjustment
+- Learning progress tracking
 
-- **Popup**: Right-click popup → Inspect
-- **Content Script**: F12 on any webpage → Console
-- **Background Script**: `chrome://extensions` → Hilo → Inspect views: service worker
+## 🧪 Testing
 
----
+### Manual Testing Checklist
+1. **Text Selection**: Verify toolbar appears for 8+ character selections
+2. **Simplification**: Confirm text is simplified according to CEFR level
+3. **YouTube Integration**: Test caption simplification with EASY toggle
+4. **Settings Persistence**: Verify settings save and sync across browser sessions
+5. **Responsive Design**: Test on different screen sizes and zoom levels
 
-## 🎨 CEFR Levels
-
-| Level | Description | Text Characteristics |
-|-------|-------------|---------------------|
-| **A1** | Beginner | Very simple words, short sentences, present tense |
-| **A2** | Elementary | Basic vocabulary, simple grammar, common topics |
-| **B1** | Intermediate | Everyday vocabulary, clear structure, past/future tenses |
-| **B2** | Upper Intermediate | Abstract concepts, complex sentences, varied vocabulary |
-| **C1** | Advanced | Sophisticated language, nuanced meaning, idioms |
-
----
-
-## 📝 Prompt Template Guide
-
-### Simplification Prompt Structure
-
-```javascript
-export const buildSimplificationPrompt = (level, text) => `
-You are a language learning assistant...
-
-TASK:
-- Rewrite for ${level} CEFR level
-- Keep original meaning
-- Simplify vocabulary and grammar
-
-FORMAT:
-[Simplified Text]
-
----
-VOCABULARY:
-• word (part of speech): definition
-  Example: [example sentence]
-
-ORIGINAL TEXT:
-${text}
-`;
-```
-
-### Customizing Prompts
-
-Edit `prompts.js` to adjust:
-- System prompts and instructions
-- Output formatting
-- Vocabulary list size
-- Example sentence style
-
----
-
-## 🔧 Configuration
-
-### manifest.json
-
-Key permissions:
-- `storage` - Save user preferences
-- `activeTab` - Access current tab content
-- `scripting` - Inject content scripts
-- `aiLanguageModelOriginTrial` - Chrome AI API access
-
-### Storage Schema
-
-```javascript
-{
-  level: 'B1',                    // CEFR level
-  targetLanguage: 'Spanish',      // Translation target
-  enableContextMenu: true,        // Right-click menu
-  autoDetectYouTube: true,       // Auto-detect YT captions
-  highlightText: false           // Highlight on simplify
-}
-```
-
----
-
-## 🚧 Roadmap
-
-- [ ] Add icon assets (16x16, 32x32, 48x48, 128x128)
-- [ ] Implement vocabulary flashcard system
-- [ ] Add progress tracking and statistics
-- [ ] Support more content types (PDFs, ebooks)
-- [ ] Multi-language UI support
-- [ ] Export simplified text to notes
-- [ ] Integration with popular language learning platforms
-- [ ] Offline mode with cached AI models
-
----
-
-## 🐛 Known Issues
-
-- Chrome AI APIs are experimental and may change
-- Some websites block content script injection (CSP policies)
-- YouTube caption detection needs refinement
-- AI responses may vary in quality
-
----
-
-## 📚 Resources
-
-- [Chrome AI API Documentation](https://developer.chrome.com/docs/ai)
-- [CEFR Framework Overview](https://www.coe.int/en/web/common-european-framework-reference-languages)
-- [Chrome Extension Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/)
-- [Chrome Built-in AI Origin Trial](https://developer.chrome.com/origintrials/#/view_trial/2971021707933343745)
-
----
+### Browser Compatibility
+- Chrome 88+ (Manifest V3 support required)
+- Edge 88+ (Chromium-based)
 
 ## 🤝 Contributing
 
-Contributions welcome! Please feel free to:
-
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
----
+### Code Style
+- Use TypeScript for all new code
+- Follow React functional component patterns
+- Maintain accessibility (WCAG AA)
+- Add JSDoc comments for public functions
 
-## 📄 License
+## 📝 License
 
-MIT License - feel free to use, modify, and distribute.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+```
+MIT License
 
-## 👤 Author
+Copyright (c) 2024 LevelLens Team
 
-Built with ❤️ for language learners everywhere.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
----
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-## 🙏 Acknowledgments
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
-- Chrome AI Team for the incredible Built-in AI APIs
-- Language learning community for inspiration
-- All contributors and testers
+## 🎯 Roadmap
 
----
+### Phase 1 (Current)
+- [x] Basic text simplification
+- [x] YouTube caption support
+- [x] CEFR level configuration
+- [x] Chrome storage integration
 
-**Happy Learning! 📚✨**
+### Phase 2 (Planned)
+- [ ] Chrome Built-in AI integration
+- [ ] Advanced context awareness
+- [ ] Learning progress tracking
+- [ ] Custom vocabulary lists
+
+### Phase 3 (Future)
+- [ ] Multi-language translation
+- [ ] Audio pronunciation
+- [ ] Learning analytics
+- [ ] Social features
+
+## 💡 Inspiration
+
+LevelLens was inspired by the need to make web content accessible to language learners at all levels. By leveraging Chrome's Built-in AI capabilities, we aim to provide privacy-respecting, real-time language adaptation that helps users gradually improve their language skills while consuming authentic web content.
+
+## 📞 Support
+
+- **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/your-username/levellens-react/issues)
+- **Documentation**: Check our [Wiki](https://github.com/your-username/levellens-react/wiki) for detailed guides
+- **Community**: Join discussions in [GitHub Discussions](https://github.com/your-username/levellens-react/discussions)
+

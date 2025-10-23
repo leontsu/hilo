@@ -1,0 +1,156 @@
+/* LevelLens Content Script Styles */
+
+/* Global overlay styles that don't rely on Shadow DOM */
+.ll-overlay {
+  position: fixed !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 2px solid #007bff !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  max-width: 400px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  backdrop-filter: blur(4px) !important;
+  color: #333 !important;
+}
+
+.ll-overlay-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 8px !important;
+  font-size: 12px !important;
+  color: #666 !important;
+  font-weight: 500 !important;
+}
+
+.ll-overlay-close {
+  background: none !important;
+  border: none !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #666 !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s !important;
+}
+
+.ll-overlay-close:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #333 !important;
+}
+
+.ll-overlay-content {
+  color: #333 !important;
+  margin-bottom: 8px !important;
+  font-weight: 500 !important;
+}
+
+.ll-overlay-summary {
+  font-size: 12px !important;
+  color: #666 !important;
+  font-style: italic !important;
+  border-top: 1px solid #eee !important;
+  padding-top: 8px !important;
+  margin-top: 8px !important;
+}
+
+/* YouTube specific styles */
+#levellens-youtube-overlay {
+  animation: fadeIn 0.3s ease-in-out !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Ensure overlays don't interfere with page interactions */
+.ll-overlay * {
+  box-sizing: border-box !important;
+}
+
+/* Accessibility improvements */
+.ll-overlay:focus-within {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Dark mode support for overlays */
+@media (prefers-color-scheme: dark) {
+  .ll-overlay {
+    background: rgba(45, 45, 45, 0.95) !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+  }
+  
+  .ll-overlay-content {
+    color: #fff !important;
+  }
+  
+  .ll-overlay-header {
+    color: #ccc !important;
+  }
+  
+  .ll-overlay-summary {
+    color: #ccc !important;
+    border-top-color: #555 !important;
+  }
+  
+  .ll-overlay-close {
+    color: #ccc !important;
+  }
+  
+  .ll-overlay-close:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+  }
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .ll-overlay {
+    max-width: 90vw !important;
+    font-size: 16px !important;
+  }
+  
+  #levellens-youtube-overlay {
+    max-width: 90vw !important;
+    font-size: 18px !important;
+    bottom: 100px !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ll-overlay {
+    border-width: 3px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  #levellens-youtube-overlay {
+    animation: none !important;
+  }
+  
+  .ll-overlay-close {
+    transition: none !important;
+  }
+}
