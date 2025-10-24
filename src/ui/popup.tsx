@@ -51,7 +51,7 @@ const PopupApp: React.FC = () => {
     try {
       const response = await chrome.runtime.sendMessage({ type: 'CHECK_AI_CAPABILITIES' })
       if (response.success) {
-        setAiCapabilities(response.data)
+        setAiCapabilities(response.data.capabilities)
       }
     } catch (error) {
       console.error('Error checking AI capabilities:', error)

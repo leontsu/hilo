@@ -6,6 +6,12 @@ import {
   checkAICapabilities
 } from '../lib/ai'
 import { getSettings } from '../lib/storage'
+import { 
+  validateTextInput, 
+  validateSettings, 
+  checkRateLimit, 
+  sanitizeText 
+} from '../lib/validation'
 import type { 
   MessageRequest, 
   MessageResponse, 
@@ -91,20 +97,40 @@ async function handleTextSimplification(
   request: SimplificationRequest
 ): Promise<MessageResponse> {
   try {
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // Validate input
-    if (!request.text || request.text.trim().length === 0) {
+    // Rate limiting check
+    const identifier = `simplify_${Date.now()}`
+    const rateCheck = checkRateLimit(identifier)
+    if (!rateCheck.allowed) {
       return {
         success: false,
-        error: 'No text provided'
+        error: 'Rate limit exceeded. Please wait before making more requests.'
       }
     }
 
+    // Validate and sanitize input text
+    const textValidation = validateTextInput(request.text)
+    if (!textValidation.isValid) {
+      return {
+        success: false,
+        error: textValidation.error
+      }
+    }
+
+    // Get current settings (override with request settings if provided)
+    const currentSettings = await getSettings()
+    const settingsValidation = validateSettings(request.settings)
+    if (!settingsValidation.isValid) {
+      return {
+        success: false,
+        error: settingsValidation.error
+      }
+    }
+    
+    const settings = { ...currentSettings, ...request.settings }
+    const sanitizedText = sanitizeText(request.text)
+
     // Simplify the text using AI
-    const result = await simplifyTextAI(request.text, settings)
+    const result = await simplifyTextAI(sanitizedText, settings)
     
     return {
       success: true,
@@ -231,7 +257,7 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
     
     return {
       success: true,
-      data: capabilities
+      data: { capabilities }
     }
   } catch (error) {
     console.error('AI capability check error:', error)

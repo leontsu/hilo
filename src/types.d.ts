@@ -86,14 +86,47 @@ export interface AICapabilities {
   writer: boolean
 }
 
+export interface AICapabilityRequest {
+  type: 'CHECK_AI_CAPABILITIES'
+}
+
+export interface AICapabilityResponse {
+  capabilities: AICapabilities
+}
+
+// Chrome AI API types
+declare global {
+  interface Window {
+    ai?: {
+      languageModel?: {
+        create: (options?: any) => Promise<any>
+        capabilities: () => Promise<any>
+      }
+      summarizer?: {
+        create: (options?: any) => Promise<any>
+        capabilities: () => Promise<any>
+      }
+      writer?: {
+        create: (options?: any) => Promise<any>
+        capabilities: () => Promise<any>
+      }
+    }
+    translation?: {
+      createTranslator: (options: any) => Promise<any>
+      canTranslate: (options: any) => Promise<string>
+    }
+  }
+}
+
 export type MessageRequest = 
   | SimplificationRequest 
   | CaptionSimplificationRequest
   | QuizRequest
   | TranslationRequest
+  | AICapabilityRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse
+  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse
   error?: string
 }

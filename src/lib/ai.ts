@@ -234,41 +234,52 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
 
 // Chrome Built-in AI Implementation
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
+  let session: any = null
+  let summarizer: any = null
+  let translator: any = null
+  
   try {
     const capabilities = await checkAICapabilities()
     
     if (capabilities.languageModel) {
       // Use Prompt API for text simplification
-      const session = await (window as any).ai.languageModel.create({
+      session = await (window as any).ai.languageModel.create({
         systemPrompt: buildSimplificationPrompt(settings.level),
         temperature: 0.7,
         topK: 3
       })
 
       const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
-      session.destroy()
 
       let summary = ''
       if (capabilities.summarizer) {
-        // Use Summarizer API for summary
-        const summarizer = await (window as any).ai.summarizer.create({
-          type: 'tl;dr',
-          format: 'plain-text',
-          length: 'short'
-        })
-        summary = await summarizer.summarize(simplified)
-        summarizer.destroy()
+        try {
+          // Use Summarizer API for summary
+          summarizer = await (window as any).ai.summarizer.create({
+            type: 'tl;dr',
+            format: 'plain-text',
+            length: 'short'
+          })
+          summary = await summarizer.summarize(simplified)
+        } catch (summaryError) {
+          console.warn('Summarizer failed, using fallback:', summaryError)
+          summary = simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified
+        }
       }
 
       let translation = ''
       if (capabilities.translator && settings.outputLanguage === 'ja') {
-        // Use Translator API for Japanese translation
-        const translator = await (window as any).translation.createTranslator({
-          sourceLanguage: 'en',
-          targetLanguage: 'ja'
-        })
-        translation = await translator.translate(simplified)
-        translator.destroy()
+        try {
+          // Use Translator API for Japanese translation
+          translator = await (window as any).translation.createTranslator({
+            sourceLanguage: 'en',
+            targetLanguage: 'ja'
+          })
+          translation = await translator.translate(simplified)
+        } catch (translationError) {
+          console.warn('Translation failed:', translationError)
+          translation = `[翻訳] ${simplified}`
+        }
       }
 
       return {
@@ -284,7 +295,19 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
   } catch (error) {
     console.error('AI simplification error:', error)
     // Fallback to local simplification
-    return simplifyText(text, settings)
+    return {
+      ...simplifyText(text, settings),
+      summary: `Error: ${error instanceof Error ? error.message : 'AI processing failed'}`
+    }
+  } finally {
+    // Cleanup resources
+    try {
+      if (session) session.destroy()
+      if (summarizer) summarizer.destroy()
+      if (translator) translator.destroy()
+    } catch (cleanupError) {
+      console.warn('Resource cleanup error:', cleanupError)
+    }
   }
 }
 

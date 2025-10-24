@@ -67,7 +67,7 @@ class LevelLensContentScript {
     try {
       const response = await chrome.runtime.sendMessage({ type: 'CHECK_AI_CAPABILITIES' })
       if (response.success) {
-        this.aiCapabilities = response.data
+        this.aiCapabilities = response.data.capabilities
       }
     } catch (error) {
       console.error('Error checking AI capabilities:', error)
