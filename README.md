@@ -8,7 +8,7 @@
 
 **LevelLens** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
 
-Built for the **Google Chrome Built-in AI Challenge 2025**, LevelLens prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities.
+LevelLens prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities for enhanced learning experiences.
 
 ## 🌟 Features
 

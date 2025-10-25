@@ -241,7 +241,7 @@ const OptionsApp: React.FC = () => {
         </div>
         
         <div className="footer-info">
-          <p>LevelLens v1.0.0 - Built for Google Chrome Built-in AI Challenge 2025</p>
+          <p>LevelLens v1.0.0 - Adaptive Language Learning Chrome Extension</p>
         </div>
       </footer>
     </div>
