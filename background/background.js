@@ -4,6 +4,7 @@
  */
 
 import { CEFR_LEVELS } from '../prompts.js';
+import { simplifyText, generateQuiz, translateText, checkAIAvailability } from '../scripts/aiService.js';
 
 // Initialize extension on install
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -57,6 +58,25 @@ function createContextMenus() {
       contexts: ['selection']
     });
   });
+}
+
+// Update context menus based on settings
+async function updateContextMenusFromSettings() {
+  try {
+    const settings = await chrome.storage.sync.get(['enableContextMenu']);
+    const enableContextMenu = settings.enableContextMenu !== false; // Default to true
+    
+    if (enableContextMenu) {
+      createContextMenus();
+    } else {
+      chrome.contextMenus.removeAll();
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update context menus:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 // Handle context menu clicks
@@ -122,26 +142,23 @@ async function handleContextMenuAction(tabId, action, text) {
   }
 }
 
-// Placeholder processing functions (will use aiService in production)
+// AI processing functions using aiService
 async function processSimplification(level, text) {
-  // TODO: Integrate with Chrome Prompt API
-  return `[Simplified for ${level}]\n\n${text}\n\n(API integration pending)`;
+  return await simplifyText(level, text);
 }
 
 async function processQuiz(text, level) {
-  // TODO: Integrate with Chrome Prompt API
-  return `[Quiz for ${level}]\n\n1. Question 1\n2. Question 2\n3. Question 3\n\n(API integration pending)`;
+  return await generateQuiz(text, level);
 }
 
 async function processTranslation(targetLang, text) {
-  // TODO: Integrate with Chrome Translator API
-  return `[Translated to ${targetLang}]\n\n${text}\n\n(API integration pending)`;
+  return await translateText(targetLang, text);
 }
 
 // Listen for messages from content scripts and popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'checkAIAvailability') {
-    checkAIAPIs().then(sendResponse);
+    checkAIAvailability().then(sendResponse);
     return true; // Keep channel open
   }
 
@@ -149,25 +166,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     initializeAIAPIs().then(sendResponse);
     return true;
   }
+
+  if (request.action === 'updateContextMenus') {
+    updateContextMenusFromSettings().then(sendResponse);
+    return true;
+  }
 });
 
-// Check if Chrome AI APIs are available
-async function checkAIAPIs() {
-  try {
-    const capabilities = {
-      promptAPI: typeof self.ai?.languageModel !== 'undefined',
-      summarizerAPI: typeof self.ai?.summarizer !== 'undefined',
-      writerAPI: typeof self.ai?.writer !== 'undefined',
-      translatorAPI: typeof self.translation !== 'undefined'
-    };
-
-    console.log('Chrome AI capabilities:', capabilities);
-    return { available: true, capabilities };
-  } catch (error) {
-    console.error('AI availability check failed:', error);
-    return { available: false, error: error.message };
-  }
-}
 
 // Initialize AI APIs
 async function initializeAIAPIs() {

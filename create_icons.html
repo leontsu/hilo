@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="128" height="128"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create a simple icon for Hilo - a mountain/hill shape
+        ctx.fillStyle = '#4A90E2';
+        ctx.fillRect(0, 0, 128, 128);
+        
+        // Draw a stylized "H" for Hilo
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('H', 64, 64);
+        
+        // Convert to data URL and download
+        const dataURL = canvas.toDataURL('image/png');
+        console.log('Data URL:', dataURL);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = 'icon128.png';
+        link.href = dataURL;
+        document.body.appendChild(link);
+        link.click();
+    </script>
+</body>
+</html>
