@@ -10,28 +10,37 @@ import {
   buildContextualSimplificationPrompt,
   buildSummaryPrompt
 } from '../prompts.js';
+import { createLogger } from './logger.js';
+
+// Create logger for AI service
+const logger = createLogger('AIService');
 
 /**
  * Check if Chrome AI APIs are available
  * @returns {Promise<Object>} Availability status and capabilities
  */
 export async function checkAIAvailability() {
-  try {
+  const availabilityLogger = logger.createTryCatchLogger('AI Availability Check');
+  
+  return await availabilityLogger.tryAsync(async () => {
+    logger.debug('Checking Chrome AI API availability');
+    
     const capabilities = {
       promptAPI: typeof self.ai?.languageModel !== 'undefined',
       summarizerAPI: typeof self.ai?.summarizer !== 'undefined',
       writerAPI: typeof self.ai?.writer !== 'undefined',
       translatorAPI: typeof self.translation !== 'undefined'
     };
+    
+    const available = Object.values(capabilities).some(v => v);
+    
+    logger.info('AI availability check completed', { available, capabilities });
 
     return {
-      available: Object.values(capabilities).some(v => v),
+      available,
       capabilities
     };
-  } catch (error) {
-    console.error('Error checking AI availability:', error);
-    return { available: false, error: error.message };
-  }
+  }, 'AI availability check failed');
 }
 
 /**
@@ -42,12 +51,23 @@ export async function checkAIAvailability() {
  * @returns {Promise<string>} Simplified text with vocabulary
  */
 export async function simplifyText(level, text, contentType = 'text') {
-  try {
+  const simplifyLogger = logger.createTryCatchLogger('Text Simplification');
+  
+  return await simplifyLogger.tryAsync(async () => {
+    logger.info('Starting text simplification', { 
+      level, 
+      contentType, 
+      textLength: text.length 
+    });
+    
     // Check if Prompt API is available
     if (!self.ai || !self.ai.languageModel) {
-      throw new Error('Chrome Prompt API is not available. Please enable it in chrome://flags');
+      const errorMsg = 'Chrome Prompt API is not available. Please enable it in chrome://flags';
+      logger.warn('Prompt API not available, using fallback', { reason: errorMsg });
+      return getFallbackSimplification(level, text);
     }
 
+    logger.debug('Creating language model session');
     // Create language model session
     const session = await self.ai.languageModel.create({
       systemPrompt: 'You are a helpful language learning assistant that simplifies text for English learners.',
@@ -59,25 +79,26 @@ export async function simplifyText(level, text, contentType = 'text') {
     const prompt = contentType === 'text' 
       ? buildSimplificationPrompt(level, text)
       : buildContextualSimplificationPrompt(level, text, contentType);
+    
+    logger.debug('Sending prompt to AI model', { promptLength: prompt.length });
 
     // Generate response
+    const startTime = Date.now();
     const result = await session.prompt(prompt);
+    const processingTime = Date.now() - startTime;
+    
+    logger.info('AI response received', { 
+      processingTime, 
+      responseLength: result.length 
+    });
 
     // Clean up session
     session.destroy();
+    logger.debug('Language model session destroyed');
 
     return result;
 
-  } catch (error) {
-    console.error('Simplification error:', error);
-    
-    // Fallback for development/testing
-    if (error.message.includes('not available')) {
-      return getFallbackSimplification(level, text);
-    }
-    
-    throw error;
-  }
+  }, 'Text simplification operation failed');
 }
 
 /**
@@ -87,11 +108,21 @@ export async function simplifyText(level, text, contentType = 'text') {
  * @returns {Promise<string>} Quiz questions with answers
  */
 export async function generateQuiz(text, level = 'B1') {
-  try {
+  const quizLogger = logger.createTryCatchLogger('Quiz Generation');
+  
+  return await quizLogger.tryAsync(async () => {
+    logger.info('Starting quiz generation', { 
+      level, 
+      textLength: text.length 
+    });
+    
     if (!self.ai || !self.ai.languageModel) {
-      throw new Error('Chrome Prompt API is not available. Please enable it in chrome://flags');
+      const errorMsg = 'Chrome Prompt API is not available. Please enable it in chrome://flags';
+      logger.warn('Prompt API not available for quiz, using fallback', { reason: errorMsg });
+      return getFallbackQuiz(text);
     }
 
+    logger.debug('Creating quiz generation session');
     const session = await self.ai.languageModel.create({
       systemPrompt: 'You are a helpful language learning assistant that creates comprehension exercises.',
       temperature: 0.8,
@@ -99,20 +130,22 @@ export async function generateQuiz(text, level = 'B1') {
     });
 
     const prompt = buildQuizPrompt(text, level);
+    logger.debug('Sending quiz prompt to AI model', { promptLength: prompt.length });
+    
+    const startTime = Date.now();
     const result = await session.prompt(prompt);
+    const processingTime = Date.now() - startTime;
+    
+    logger.info('Quiz generation completed', { 
+      processingTime, 
+      resultLength: result.length 
+    });
 
     session.destroy();
+    logger.debug('Quiz generation session destroyed');
     return result;
 
-  } catch (error) {
-    console.error('Quiz generation error:', error);
-    
-    if (error.message.includes('not available')) {
-      return getFallbackQuiz(text);
-    }
-    
-    throw error;
-  }
+  }, 'Quiz generation operation failed');
 }
 
 /**
@@ -122,50 +155,75 @@ export async function generateQuiz(text, level = 'B1') {
  * @returns {Promise<string>} Translated text
  */
 export async function translateText(targetLang, text) {
-  try {
+  const translateLogger = logger.createTryCatchLogger('Translation');
+  
+  return await translateLogger.tryAsync(async () => {
+    logger.info('Starting translation', { 
+      targetLang, 
+      textLength: text.length 
+    });
+    
     // Try Chrome Translator API first
     if (self.translation && self.translation.canTranslate) {
+      logger.debug('Checking Chrome Translator API availability');
+      
       const canTranslate = await self.translation.canTranslate({
         sourceLanguage: 'en',
         targetLanguage: targetLang.toLowerCase()
       });
+      
+      logger.debug('Translator API check result', { canTranslate });
 
       if (canTranslate === 'readily') {
+        logger.debug('Using Chrome Translator API');
         const translator = await self.translation.createTranslator({
           sourceLanguage: 'en',
           targetLanguage: targetLang.toLowerCase()
         });
 
+        const startTime = Date.now();
         const result = await translator.translate(text);
+        const processingTime = Date.now() - startTime;
+        
+        logger.info('Chrome Translator API completed', { 
+          processingTime, 
+          resultLength: result.length 
+        });
+        
         return result;
       }
     }
 
     // Fallback to Prompt API
     if (self.ai && self.ai.languageModel) {
+      logger.debug('Falling back to Prompt API for translation');
+      
       const session = await self.ai.languageModel.create({
         systemPrompt: 'You are a helpful translation assistant.',
         temperature: 0.5
       });
 
       const prompt = buildTranslationPrompt(targetLang, text);
+      logger.debug('Sending translation prompt', { promptLength: prompt.length });
+      
+      const startTime = Date.now();
       const result = await session.prompt(prompt);
+      const processingTime = Date.now() - startTime;
+      
+      logger.info('Prompt API translation completed', { 
+        processingTime, 
+        resultLength: result.length 
+      });
 
       session.destroy();
+      logger.debug('Translation session destroyed');
       return result;
     }
 
-    throw new Error('No translation API available');
+    logger.warn('No translation API available, using fallback');
+    return getFallbackTranslation(targetLang, text);
 
-  } catch (error) {
-    console.error('Translation error:', error);
-    
-    if (error.message.includes('not available')) {
-      return getFallbackTranslation(targetLang, text);
-    }
-    
-    throw error;
-  }
+  }, 'Translation operation failed');
 }
 
 /**
@@ -176,48 +234,79 @@ export async function translateText(targetLang, text) {
  * @returns {Promise<string>} Summarized text
  */
 export async function summarizeText(level, text, maxSentences = 5) {
-  try {
+  const summarizeLogger = logger.createTryCatchLogger('Summarization');
+  
+  return await summarizeLogger.tryAsync(async () => {
+    logger.info('Starting text summarization', { 
+      level, 
+      maxSentences, 
+      textLength: text.length 
+    });
+    
     // Try Chrome Summarizer API first
     if (self.ai && self.ai.summarizer) {
+      logger.debug('Checking Chrome Summarizer API');
+      
       const canSummarize = await self.ai.summarizer.capabilities();
+      logger.debug('Summarizer capabilities', canSummarize);
       
       if (canSummarize.available === 'readily') {
+        logger.debug('Using Chrome Summarizer API');
+        
         const summarizer = await self.ai.summarizer.create({
           type: 'tl;dr',
           format: 'plain-text',
           length: 'short'
         });
 
+        const startTime = Date.now();
         const result = await summarizer.summarize(text);
+        const processingTime = Date.now() - startTime;
+        
+        logger.info('Chrome Summarizer API completed', { 
+          processingTime, 
+          resultLength: result.length 
+        });
+        
         return result;
       }
     }
 
     // Fallback to Prompt API
     if (self.ai && self.ai.languageModel) {
+      logger.debug('Falling back to Prompt API for summarization');
+      
       const session = await self.ai.languageModel.create({
         systemPrompt: 'You are a helpful assistant that creates clear summaries.',
         temperature: 0.6
       });
 
       const prompt = buildSummaryPrompt(level, text, maxSentences);
+      logger.debug('Sending summarization prompt', { promptLength: prompt.length });
+      
+      const startTime = Date.now();
       const result = await session.prompt(prompt);
+      const processingTime = Date.now() - startTime;
+      
+      logger.info('Prompt API summarization completed', { 
+        processingTime, 
+        resultLength: result.length 
+      });
 
       session.destroy();
+      logger.debug('Summarization session destroyed');
       return result;
     }
 
     throw new Error('No summarization API available');
 
-  } catch (error) {
-    console.error('Summarization error:', error);
-    throw error;
-  }
+  }, 'Summarization operation failed');
 }
 
 // Fallback functions for development/testing
 
 function getFallbackSimplification(level, text) {
+  logger.info('Using fallback simplification', { level, textLength: text.length });
   return `[FALLBACK MODE - Chrome AI not available]
 
 Simplified for ${level} level:
@@ -233,6 +322,7 @@ Note: Enable Chrome AI APIs in chrome://flags to use real AI simplification.`;
 }
 
 function getFallbackQuiz(text) {
+  logger.info('Using fallback quiz generation', { textLength: text.length });
   return `[FALLBACK MODE - Chrome AI not available]
 
 QUESTION 1 (Fill-in-the-blank):
@@ -258,6 +348,7 @@ Note: Enable Chrome AI APIs in chrome://flags to use real AI quiz generation.`;
 }
 
 function getFallbackTranslation(targetLang, text) {
+  logger.info('Using fallback translation', { targetLang, textLength: text.length });
   return `[FALLBACK MODE - Chrome AI not available]
 
 Translation to ${targetLang}:

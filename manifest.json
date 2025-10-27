@@ -44,7 +44,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["styles/*", "icons/*"],
+      "resources": ["styles/*", "icons/*", "scripts/logger.js"],
       "matches": ["<all_urls>"]
     }
   ]
