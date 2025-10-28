@@ -182,21 +182,21 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       return capabilities
     }
 
-    // Check Language Model API
-    if ('ai' in window && 'languageModel' in (window as any).ai) {
+    // Check Language Model API (global LanguageModel function)
+    if (typeof (globalThis as any).LanguageModel === 'function') {
       try {
-        const status = await (window as any).ai.languageModel.capabilities()
-        capabilities.languageModel = status.available === 'readily'
+        const status = await (globalThis as any).LanguageModel.availability()
+        capabilities.languageModel = status === 'readily' || status === 'downloadable'
       } catch (e) {
         console.log('Language Model API not available:', e)
       }
     }
 
-    // Check Summarizer API
-    if ('ai' in window && 'summarizer' in (window as any).ai) {
+    // Check Summarizer API (global Summarizer function)
+    if (typeof (globalThis as any).Summarizer === 'function') {
       try {
-        const status = await (window as any).ai.summarizer.capabilities()
-        capabilities.summarizer = status.available === 'readily'
+        const status = await (globalThis as any).Summarizer.availability()
+        capabilities.summarizer = status === 'readily' || status === 'downloadable'
       } catch (e) {
         console.log('Summarizer API not available:', e)
       }
@@ -214,11 +214,11 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       }
     }
 
-    // Check Writer API
-    if ('ai' in window && 'writer' in (window as any).ai) {
+    // Check Writer API (global Writer function)
+    if (typeof (globalThis as any).Writer === 'function') {
       try {
-        const status = await (window as any).ai.writer.capabilities()
-        capabilities.writer = status.available === 'readily'
+        const status = await (globalThis as any).Writer.availability()
+        capabilities.writer = status === 'readily' || status === 'downloadable'
       } catch (e) {
         console.log('Writer API not available:', e)
       }
@@ -246,11 +246,12 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     const capabilities = await checkAICapabilities()
     
     if (capabilities.languageModel) {
-      // Use Prompt API for text simplification
-      session = await (window as any).ai.languageModel.create({
+      // Use global LanguageModel for text simplification
+      session = await (globalThis as any).LanguageModel.create({
         systemPrompt: buildSimplificationPrompt(settings.level),
         temperature: 0.7,
-        topK: 3
+        topK: 3,
+        outputLanguage: 'en'
       })
 
       const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
@@ -258,11 +259,9 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
       let summary = ''
       if (capabilities.summarizer) {
         try {
-          // Use Summarizer API for summary
-          summarizer = await (window as any).ai.summarizer.create({
-            type: 'tl;dr',
-            format: 'plain-text',
-            length: 'short'
+          // Use global Summarizer for summary
+          summarizer = await (globalThis as any).Summarizer.create({
+            outputLanguage: 'en'
           })
           summary = await summarizer.summarize(simplified)
         } catch (summaryError) {
@@ -274,8 +273,8 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
       let translation = ''
       if (capabilities.translator && settings.outputLanguage === 'ja') {
         try {
-          // Use Translator API for Japanese translation
-          translator = await (window as any).translation.createTranslator({
+          // Use global Translation API for Japanese translation
+          translator = await (globalThis as any).translation.createTranslator({
             sourceLanguage: 'en',
             targetLanguage: 'ja'
           })
@@ -320,11 +319,9 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     const capabilities = await checkAICapabilities()
     
     if (capabilities.writer) {
-      // Use Writer API for quiz generation
-      const session = await (window as any).ai.writer.create({
-        format: 'plain-text',
-        tone: 'educational',
-        length: 'medium'
+      // Use global Writer API for quiz generation
+      const session = await (globalThis as any).Writer.create({
+        outputLanguage: 'en'
       })
 
       const prompt = buildQuizPrompt(text, settings.level)

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome AI APIs Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .api-test {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .available { background: #d4edda; color: #155724; }
+        .unavailable { background: #f8d7da; color: #721c24; }
+        .unknown { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 Chrome AI APIs Test</h1>
+    <p>This page will test Chrome's built-in AI APIs availability and functionality.</p>
+
+    <!-- API Availability Check -->
+    <div class="api-test">
+        <h2>🔍 API Availability Check</h2>
+        <div id="api-status">
+            <p>Prompt API (ai.languageModel): <span id="prompt-status" class="status unknown">Checking...</span></p>
+            <p>Summarizer API (ai.summarizer): <span id="summarizer-status" class="status unknown">Checking...</span></p>
+            <p>Writer API (ai.writer): <span id="writer-status" class="status unknown">Checking...</span></p>
+            <p>Translation API (translation): <span id="translation-status" class="status unknown">Checking...</span></p>
+        </div>
+        <button onclick="checkAPIs()">🔄 Re-check APIs</button>
+    </div>
+
+    <!-- Prompt API Test -->
+    <div class="api-test">
+        <h2>💬 Prompt API Test</h2>
+        <textarea id="prompt-input" placeholder="Enter text to simplify..." style="width: 100%; height: 80px;">
+The phenomenon of photosynthesis involves the complex biochemical process by which chlorophyll-containing organisms convert light energy into chemical energy.
+        </textarea>
+        <br>
+        <button onclick="testPromptAPI()">🤖 Simplify Text (A1 Level)</button>
+        <div id="prompt-result"></div>
+    </div>
+
+    <!-- Summarizer API Test -->
+    <div class="api-test">
+        <h2>📋 Summarizer API Test</h2>
+        <textarea id="summarizer-input" placeholder="Enter long text to summarize..." style="width: 100%; height: 100px;">
+Artificial intelligence has evolved dramatically over the past decade, transforming from a niche academic field into a ubiquitous technology that influences nearly every aspect of modern life. Machine learning algorithms now power recommendation systems, autonomous vehicles, medical diagnosis tools, and financial trading platforms. The development of large language models has particularly revolutionized natural language processing, enabling chatbots and virtual assistants to engage in increasingly sophisticated conversations. However, this rapid advancement has also raised important questions about job displacement, privacy, algorithmic bias, and the need for responsible AI development. Governments and organizations worldwide are grappling with how to harness AI's benefits while mitigating its risks, leading to new regulations and ethical frameworks for AI deployment.
+        </textarea>
+        <br>
+        <button onclick="testSummarizerAPI()">📄 Summarize Text</button>
+        <div id="summarizer-result"></div>
+    </div>
+
+    <!-- Writer API Test -->
+    <div class="api-test">
+        <h2>✍️ Writer API Test</h2>
+        <textarea id="writer-input" placeholder="Enter text to generate quiz from..." style="width: 100%; height: 80px;">
+Water is essential for all living things. Plants need water to make food through photosynthesis. Animals drink water to stay alive. The human body is about 60% water.
+        </textarea>
+        <br>
+        <button onclick="testWriterAPI()">📝 Generate Quiz</button>
+        <div id="writer-result"></div>
+    </div>
+
+    <script>
+        // Check API availability
+        async function checkAPIs() {
+            console.log('Checking Chrome AI APIs...');
+            
+            // Check Prompt API
+            if (window.ai && window.ai.languageModel) {
+                try {
+                    const capabilities = await window.ai.languageModel.capabilities();
+                    document.getElementById('prompt-status').textContent = capabilities.available || 'Available';
+                    document.getElementById('prompt-status').className = 'status available';
+                } catch (e) {
+                    document.getElementById('prompt-status').textContent = 'Error: ' + e.message;
+                    document.getElementById('prompt-status').className = 'status unavailable';
+                }
+            } else {
+                document.getElementById('prompt-status').textContent = 'Not Available';
+                document.getElementById('prompt-status').className = 'status unavailable';
+            }
+
+            // Check Summarizer API
+            if (window.ai && window.ai.summarizer) {
+                try {
+                    const capabilities = await window.ai.summarizer.capabilities();
+                    document.getElementById('summarizer-status').textContent = capabilities.available || 'Available';
+                    document.getElementById('summarizer-status').className = 'status available';
+                } catch (e) {
+                    document.getElementById('summarizer-status').textContent = 'Error: ' + e.message;
+                    document.getElementById('summarizer-status').className = 'status unavailable';
+                }
+            } else {
+                document.getElementById('summarizer-status').textContent = 'Not Available';
+                document.getElementById('summarizer-status').className = 'status unavailable';
+            }
+
+            // Check Writer API
+            if (window.ai && window.ai.writer) {
+                try {
+                    const capabilities = await window.ai.writer.capabilities();
+                    document.getElementById('writer-status').textContent = capabilities.available || 'Available';
+                    document.getElementById('writer-status').className = 'status available';
+                } catch (e) {
+                    document.getElementById('writer-status').textContent = 'Error: ' + e.message;
+                    document.getElementById('writer-status').className = 'status unavailable';
+                }
+            } else {
+                document.getElementById('writer-status').textContent = 'Not Available';
+                document.getElementById('writer-status').className = 'status unavailable';
+            }
+
+            // Check Translation API
+            if (window.translation) {
+                try {
+                    const canTranslate = await window.translation.canTranslate({
+                        sourceLanguage: 'en',
+                        targetLanguage: 'ja'
+                    });
+                    document.getElementById('translation-status').textContent = canTranslate;
+                    document.getElementById('translation-status').className = canTranslate === 'readily' ? 'status available' : 'status unavailable';
+                } catch (e) {
+                    document.getElementById('translation-status').textContent = 'Error: ' + e.message;
+                    document.getElementById('translation-status').className = 'status unavailable';
+                }
+            } else {
+                document.getElementById('translation-status').textContent = 'Not Available';
+                document.getElementById('translation-status').className = 'status unavailable';
+            }
+        }
+
+        // Test Prompt API
+        async function testPromptAPI() {
+            const input = document.getElementById('prompt-input').value;
+            const resultDiv = document.getElementById('prompt-result');
+            
+            if (!window.ai || !window.ai.languageModel) {
+                resultDiv.innerHTML = '<div class="result error">Prompt API not available</div>';
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = '<div class="result">Processing...</div>';
+                
+                const session = await window.ai.languageModel.create({
+                    systemPrompt: 'You are a helpful language learning assistant that simplifies text for A1 level English learners.',
+                    temperature: 0.7
+                });
+
+                const prompt = `Simplify this text for A1 level English learners using simple words and short sentences: "${input}"`;
+                const result = await session.prompt(prompt);
+                
+                session.destroy();
+                
+                resultDiv.innerHTML = `<div class="result"><strong>Simplified Text:</strong>\n${result}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test Summarizer API
+        async function testSummarizerAPI() {
+            const input = document.getElementById('summarizer-input').value;
+            const resultDiv = document.getElementById('summarizer-result');
+            
+            if (!window.ai || !window.ai.summarizer) {
+                resultDiv.innerHTML = '<div class="result error">Summarizer API not available</div>';
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = '<div class="result">Processing...</div>';
+                
+                const summarizer = await window.ai.summarizer.create({
+                    type: 'tl;dr',
+                    format: 'plain-text',
+                    length: 'short'
+                });
+
+                const result = await summarizer.summarize(input);
+                summarizer.destroy();
+                
+                resultDiv.innerHTML = `<div class="result"><strong>Summary:</strong>\n${result}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test Writer API
+        async function testWriterAPI() {
+            const input = document.getElementById('writer-input').value;
+            const resultDiv = document.getElementById('writer-result');
+            
+            if (!window.ai || !window.ai.writer) {
+                resultDiv.innerHTML = '<div class="result error">Writer API not available</div>';
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = '<div class="result">Processing...</div>';
+                
+                const writer = await window.ai.writer.create({
+                    format: 'plain-text',
+                    tone: 'educational'
+                });
+
+                const prompt = `Generate 2 simple quiz questions about this text for English learners:\n\n"${input}"\n\nFormat each question with multiple choice answers A, B, C, D and mark the correct answer.`;
+                const result = await writer.write(prompt);
+                writer.destroy();
+                
+                resultDiv.innerHTML = `<div class="result"><strong>Generated Quiz:</strong>\n${result}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-check on page load
+        window.addEventListener('load', checkAPIs);
+    </script>
+</body>
+</html>
