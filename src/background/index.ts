@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener((
 
 async function handleMessage(
   request: MessageRequest,
-  sender: chrome.runtime.MessageSender
+  _sender: chrome.runtime.MessageSender
 ): Promise<MessageResponse> {
   try {
     // Get current user settings
@@ -178,7 +178,7 @@ async function handleCaptionSimplification(
 }
 
 // Handle tab updates to inject content scripts if needed
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     // Only inject on supported URLs
     if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {

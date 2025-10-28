@@ -1,6 +1,5 @@
 import type { 
   CEFRLevel, 
-  OutputLanguage, 
   UserSettings, 
   SimplificationResponse,
   CaptionLine,
@@ -176,6 +175,11 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       summarizer: false,
       translator: false,
       writer: false
+    }
+
+    // Return default capabilities if window is not available (e.g., in service worker)
+    if (typeof window === 'undefined') {
+      return capabilities
     }
 
     // Check Language Model API
