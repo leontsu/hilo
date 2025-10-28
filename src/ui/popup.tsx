@@ -173,41 +173,125 @@ const PopupApp: React.FC = () => {
 
         <div className="ai-status">
           <div className="ai-status-header">
-            <h3>🤖 AI Capabilities</h3>
-            <div className="ai-status-indicator">
-              <div className={`status-dot ${Object.values(aiCapabilities).some(v => v) ? 'active' : 'inactive'}`}></div>
-              <span className="status-text">
-                {Object.values(aiCapabilities).filter(v => v).length}/{Object.values(aiCapabilities).length} Available
-              </span>
+            <div className="ai-header-content">
+              <div className="ai-title-section">
+                <h3>🤖 AI Capabilities</h3>
+                <div className="ai-version-badge">Chrome Built-in AI</div>
+              </div>
+              <div className="ai-overall-status">
+                <div className="status-indicator">
+                  <div className={`status-ring ${Object.values(aiCapabilities).some(v => v) ? 'active' : 'inactive'}`}>
+                    <div className="status-fill" style={{
+                      '--fill-percentage': `${(Object.values(aiCapabilities).filter(v => v).length / Object.values(aiCapabilities).length) * 100}%`
+                    } as React.CSSProperties}></div>
+                  </div>
+                  <div className="status-label">
+                    <div className="status-count">{Object.values(aiCapabilities).filter(v => v).length}</div>
+                    <div className="status-total">/{Object.values(aiCapabilities).length}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="ai-capabilities">
-            <div className={`ai-capability ${aiCapabilities.languageModel ? 'available' : 'unavailable'}`}>
-              <div className="capability-icon">{aiCapabilities.languageModel ? '🤖' : '📚'}</div>
-              <div className="capability-info">
-                <div className="capability-name">Simplification</div>
-                <div className="capability-type">{aiCapabilities.languageModel ? 'AI-Powered' : 'Basic'}</div>
+          
+          <div className="ai-capabilities-grid">
+            <div className={`ai-capability-card priority-high ${aiCapabilities.languageModel ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.languageModel ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.languageModel ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.languageModel && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar accuracy" title="Accuracy: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.languageModel ? '🧠' : '📚'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Text Simplification</div>
+                  <div className="capability-description">{aiCapabilities.languageModel ? 'Advanced AI processing with context understanding' : 'Basic text processing with predefined rules'}</div>
+                </div>
               </div>
             </div>
-            <div className={`ai-capability ${aiCapabilities.writer ? 'available' : 'unavailable'}`}>
-              <div className="capability-icon">{aiCapabilities.writer ? '🤖' : '📝'}</div>
-              <div className="capability-info">
-                <div className="capability-name">Quiz Generation</div>
-                <div className="capability-type">{aiCapabilities.writer ? 'AI-Powered' : 'Basic'}</div>
+
+            <div className={`ai-capability-card priority-medium ${aiCapabilities.writer ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.writer ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.writer ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.writer && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar creativity" title="Creativity: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.writer ? '✨' : '📝'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Quiz Generation</div>
+                  <div className="capability-description">{aiCapabilities.writer ? 'AI-generated contextual questions and answers' : 'Template-based quiz creation'}</div>
+                </div>
               </div>
             </div>
-            <div className={`ai-capability ${aiCapabilities.translator ? 'available' : 'unavailable'}`}>
-              <div className="capability-icon">{aiCapabilities.translator ? '🤖' : '🌐'}</div>
-              <div className="capability-info">
-                <div className="capability-name">Translation</div>
-                <div className="capability-type">{aiCapabilities.translator ? 'AI-Powered' : 'Basic'}</div>
+
+            <div className={`ai-capability-card priority-medium ${aiCapabilities.translator ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.translator ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.translator ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.translator && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar fluency" title="Fluency: Native-like"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.translator ? '🌍' : '🌐'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Translation</div>
+                  <div className="capability-description">{aiCapabilities.translator ? 'Neural machine translation with cultural context' : 'Dictionary-based translation service'}</div>
+                </div>
               </div>
             </div>
-            <div className={`ai-capability ${aiCapabilities.summarizer ? 'available' : 'unavailable'}`}>
-              <div className="capability-icon">{aiCapabilities.summarizer ? '🤖' : '📄'}</div>
-              <div className="capability-info">
-                <div className="capability-name">Summarization</div>
-                <div className="capability-type">{aiCapabilities.summarizer ? 'AI-Powered' : 'Basic'}</div>
+
+            <div className={`ai-capability-card priority-low ${aiCapabilities.summarizer ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.summarizer ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.summarizer ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.summarizer && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar comprehension" title="Comprehension: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.summarizer ? '📋' : '📄'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Summarization</div>
+                  <div className="capability-description">{aiCapabilities.summarizer ? 'Intelligent content summarization with key insights' : 'Basic text extraction and shortening'}</div>
+                </div>
               </div>
             </div>
           </div>

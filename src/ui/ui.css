@@ -965,3 +965,338 @@ body {
     color: #fdba74;
   }
 }
+
+/* Enhanced AI Capability Status Visualization */
+
+/* AI Status Header */
+.ai-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ai-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-version-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  align-self: flex-start;
+}
+
+.ai-overall-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-ring {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.status-ring.active {
+  border-color: #10b981;
+  animation: pulse-ring 2s infinite;
+}
+
+.status-ring.inactive {
+  border-color: #6b7280;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.status-fill {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #10b981 0deg,
+    #10b981 calc(var(--fill-percentage) * 3.6deg),
+    transparent calc(var(--fill-percentage) * 3.6deg),
+    transparent 360deg
+  );
+}
+
+.status-label {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.status-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.status-total {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* AI Capabilities Grid */
+.ai-capabilities-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ai-capability-card {
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-capability-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  transition: all 0.3s;
+}
+
+.ai-capability-card.priority-high::before {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.ai-capability-card.priority-medium::before {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+}
+
+.ai-capability-card.priority-low::before {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.ai-capability-card.ai-enabled {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.ai-capability-card.ai-enabled:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+}
+
+.ai-capability-card.fallback-mode {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05) 0%, rgba(75, 85, 99, 0.05) 100%);
+  border-color: rgba(107, 114, 128, 0.2);
+}
+
+.ai-capability-card.fallback-mode:hover {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, rgba(75, 85, 99, 0.08) 100%);
+  border-color: rgba(107, 114, 128, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Capability Header */
+.capability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.capability-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.status-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.status-led.led-active {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  animation: led-pulse 1.5s infinite;
+}
+
+.status-led.led-inactive {
+  background: #6b7280;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.status-badge-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Performance Bars */
+.performance-bars {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.perf-bar {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+.perf-bar.speed {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  animation: perf-glow 2s infinite alternate;
+}
+
+.perf-bar.quality {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  animation: perf-glow 2s infinite alternate 0.5s;
+}
+
+.perf-bar.accuracy,
+.perf-bar.creativity,
+.perf-bar.fluency,
+.perf-bar.comprehension {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  animation: perf-glow 2s infinite alternate 1s;
+}
+
+@keyframes perf-glow {
+  0% { opacity: 0.6; transform: scaleY(0.8); }
+  100% { opacity: 1; transform: scaleY(1.2); }
+}
+
+/* Capability Content */
+.capability-content {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.capability-icon-large {
+  font-size: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.capability-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.capability-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.capability-description {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Dark Mode for Enhanced AI Status */
+@media (prefers-color-scheme: dark) {
+  .ai-version-badge {
+    background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+  }
+  
+  .status-ring {
+    border-color: #374151;
+  }
+  
+  .status-ring.active {
+    border-color: #10b981;
+  }
+  
+  .status-count {
+    color: #10b981;
+  }
+  
+  .status-total {
+    color: #9ca3af;
+  }
+  
+  .ai-capability-card.ai-enabled {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  
+  .ai-capability-card.ai-enabled:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+  
+  .ai-capability-card.fallback-mode {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, rgba(75, 85, 99, 0.08) 100%);
+    border-color: rgba(107, 114, 128, 0.3);
+  }
+  
+  .ai-capability-card.fallback-mode:hover {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.12) 0%, rgba(75, 85, 99, 0.12) 100%);
+    border-color: rgba(107, 114, 128, 0.4);
+  }
+  
+  .capability-status-badge {
+    background: rgba(31, 41, 55, 0.8);
+    border-color: rgba(107, 114, 128, 0.3);
+  }
+  
+  .status-badge-text {
+    color: #d1d5db;
+  }
+  
+  .capability-name {
+    color: #f9fafb;
+  }
+  
+  .capability-description {
+    color: #9ca3af;
+  }
+}
