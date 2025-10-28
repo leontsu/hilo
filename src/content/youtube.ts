@@ -118,20 +118,21 @@ class YouTubeHilo {
     this.updateToggleButton()
     this.toggleButton.style.cssText = `
       position: fixed;
-      bottom: 120px;
-      right: 20px;
+      top: 80px;
+      right: 24px;
       z-index: 2147483647;
       background: ${this.isEnabled ? '#3b82f6' : '#6b7280'};
       color: white;
       border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       transition: all 150ms ease;
+      backdrop-filter: blur(10px);
     `
 
     this.toggleButton.addEventListener('click', () => {

@@ -113,8 +113,7 @@ const OptionsApp: React.FC = () => {
   return (
     <div className="options-container">
       <header className="options-header">
-        <h1>Hilo Settings</h1>
-        <p>Configure your adaptive translation preferences</p>
+        <h1>Hilo</h1>
       </header>
 
       <main className="options-main">
