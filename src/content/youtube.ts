@@ -1,6 +1,6 @@
 import type { UserSettings, CaptionLine, SimplifiedCaptionLine } from '../types'
 
-class YouTubeLevelLens {
+class YouTubeHilo {
   private settings: UserSettings = { level: 'B1', outputLanguage: 'en', enabled: true }
   private observer: MutationObserver | null = null
   private captionContainer: HTMLElement | null = null
@@ -13,7 +13,7 @@ class YouTubeLevelLens {
   }
 
   private async init() {
-    console.log('YouTube LevelLens initializing...')
+    console.log('YouTube Hilo initializing...')
     
     // Load settings
     await this.loadSettings()
@@ -214,7 +214,7 @@ class YouTubeLevelLens {
     
     this.overlayContainer.innerHTML = `
       <div style="margin-bottom: 4px; font-size: 12px; opacity: 0.8;">
-        LevelLens (${this.settings.level})
+        Hilo (${this.settings.level})
       </div>
       <div>${latestCaption.simplified}</div>
     `
@@ -233,6 +233,6 @@ class YouTubeLevelLens {
 if (window.location.hostname.includes('youtube.com')) {
   // Wait for page to stabilize
   setTimeout(() => {
-    new YouTubeLevelLens()
+    new YouTubeHilo()
   }, 2000)
 }

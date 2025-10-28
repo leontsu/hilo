@@ -37,8 +37,8 @@ const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string; examp
 ]
 
 const OUTPUT_LANGUAGES: { value: OutputLanguage; label: string; description: string }[] = [
-  { value: 'en', label: 'English', description: 'Simplify text while keeping English language' },
-  { value: 'ja', label: '日本語 (Japanese)', description: 'Translate and simplify to Japanese' }
+  { value: 'en', label: 'English', description: 'Adjust text level while keeping English language' },
+  { value: 'ja', label: '日本語 (Japanese)', description: 'Translate and adjust to Japanese' }
 ]
 
 const OptionsApp: React.FC = () => {
@@ -118,7 +118,7 @@ const OptionsApp: React.FC = () => {
   return (
     <div className="options-container">
       <header className="options-header">
-        <h1>LevelLens Settings</h1>
+        <h1>Hilo Settings</h1>
         <p>Configure your adaptive translation preferences</p>
       </header>
 
@@ -135,10 +135,10 @@ const OptionsApp: React.FC = () => {
                 disabled={saving}
               />
               <span className="checkmark"></span>
-              Enable LevelLens on all websites
+              <span className="setting-label-text">Enable Hilo on all websites</span>
             </label>
             <p className="setting-help">
-              When disabled, LevelLens will not process any text or show simplification options.
+              When disabled, Hilo will not process any text or show level adjustment options.
             </p>
           </div>
         </section>
@@ -209,11 +209,11 @@ const OptionsApp: React.FC = () => {
           <div className="instructions">
             <div className="instruction-item">
               <h3>📄 Web Pages</h3>
-              <p>Select any text (8+ characters) to see the simplification toolbar. Click "Simplify" to get an easier version.</p>
+              <p>Select any text (8+ characters) to see the toolbar. Click "Adjust Level" to change text to your CEFR level.</p>
             </div>
             <div className="instruction-item">
               <h3>🎥 YouTube</h3>
-              <p>Click the "EASY" button that appears on YouTube videos to enable simplified captions.</p>
+              <p>Click the "EASY" button that appears on YouTube videos to enable adjusted captions.</p>
             </div>
             <div className="instruction-item">
               <h3>⚙️ Settings</h3>
@@ -241,7 +241,7 @@ const OptionsApp: React.FC = () => {
         </div>
         
         <div className="footer-info">
-          <p>LevelLens v1.0.0 - Adaptive Language Learning Chrome Extension</p>
+          <p>Hilo v1.0.0 - Adaptive Language Learning Chrome Extension</p>
         </div>
       </footer>
     </div>

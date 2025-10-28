@@ -23,7 +23,7 @@ import type {
 
 // Handle installation
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('LevelLens extension installed')
+  console.log('Hilo extension installed')
 })
 
 // Handle messages from content scripts

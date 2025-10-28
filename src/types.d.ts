@@ -25,6 +25,11 @@ export interface SimplificationRequest {
   settings: UserSettings
 }
 
+export interface PageAdjustmentRequest {
+  type: 'ADJUST_PAGE'
+  settings: UserSettings
+}
+
 export interface SimplificationResponse {
   simplified: string
   summary?: string
@@ -132,6 +137,7 @@ declare global {
 
 export type MessageRequest = 
   | SimplificationRequest 
+  | PageAdjustmentRequest
   | CaptionSimplificationRequest
   | QuizRequest
   | TranslationRequest

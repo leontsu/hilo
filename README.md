@@ -1,14 +1,14 @@
-# LevelLens - Adaptive Translator for the Real Web
+# Hilo - Adaptive Translator for the Real Web
 
-![LevelLens Logo](https://img.shields.io/badge/LevelLens-Adaptive%20Translator-blue)
+![Hilo Logo](https://img.shields.io/badge/Hilo-Adaptive%20Translator-blue)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue)
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow)
 
-**LevelLens** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
+**Hilo** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
 
-LevelLens prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities for enhanced learning experiences.
+Hilo prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities for enhanced learning experiences.
 
 ## 🌟 Features
 
@@ -81,7 +81,7 @@ Then load the extension from the `dist` folder as described above. Changes will 
 3. **Simplified Captions**: Captions will be automatically simplified and displayed at the bottom
 
 ### Settings
-- **Access Settings**: Click the LevelLens icon in Chrome's toolbar
+- **Access Settings**: Click the Hilo icon in Chrome's toolbar
 - **Choose Level**: Select your CEFR level (A1-C1)
 - **Set Language**: Choose English or Japanese output
 - **Advanced Options**: Click "Advanced Settings" for detailed configuration
@@ -141,7 +141,7 @@ levellens-react/
 
 ## 🤖 Chrome Built-in AI Integration
 
-LevelLens is designed to seamlessly integrate with Chrome's Built-in AI APIs. The current implementation uses local simplification stubs that can be easily replaced.
+Hilo is designed to seamlessly integrate with Chrome's Built-in AI APIs. The current implementation uses local simplification stubs that can be easily replaced.
 
 ### AI Replacement Guide
 
@@ -210,7 +210,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 MIT License
 
-Copyright (c) 2024 LevelLens Team
+Copyright (c) 2024 Hilo Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -253,7 +253,7 @@ SOFTWARE.
 
 ## 💡 Inspiration
 
-LevelLens was inspired by the need to make web content accessible to language learners at all levels. By leveraging Chrome's Built-in AI capabilities, we aim to provide privacy-respecting, real-time language adaptation that helps users gradually improve their language skills while consuming authentic web content.
+Hilo was inspired by the need to make web content accessible to language learners at all levels. By leveraging Chrome's Built-in AI capabilities, we aim to provide privacy-respecting, real-time language adaptation that helps users gradually improve their language skills while consuming authentic web content.
 
 ## 📞 Support
 
