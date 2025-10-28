@@ -12,7 +12,7 @@ class PerformanceMonitor {
   private metrics: PerformanceMetrics[] = []
   private readonly maxMetrics = 100
 
-  startTimer(operation: string): () => void {
+  startTimer(operation: string): (success?: boolean, error?: string) => void {
     const start = performance.now()
     
     return (success: boolean = true, error?: string) => {
@@ -76,7 +76,7 @@ export async function measureAsync<T>(
   
   try {
     const result = await fn()
-    endTimer(true)
+    endTimer()
     return result
   } catch (error) {
     endTimer(false, error instanceof Error ? error.message : 'Unknown error')
@@ -89,7 +89,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null
+  let timeoutId: number | null = null
   
   return (...args: Parameters<T>) => {
     if (timeoutId) {
@@ -120,7 +120,7 @@ export function throttle<T extends (...args: any[]) => any>(
 }
 
 // Memory usage monitoring
-export function getMemoryUsage(): MemoryInfo | null {
+export function getMemoryUsage(): any | null {
   if ('memory' in performance) {
     return (performance as any).memory
   }

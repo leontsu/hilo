@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import type { UserSettings, SimplificationResponse, QuizResponse, TranslationResponse, AICapabilities } from '../types'
 
@@ -369,7 +369,7 @@ class LevelLensContentScript {
         <div class="ll-overlay-section">
           <div class="ll-overlay-section-title">Quick Quiz:</div>
           <div class="ll-overlay-quiz">
-            ${data.quiz.map((q, i) => `
+            ${data.quiz?.map((q, i) => `
               <div class="quiz-question" data-question-id="${q.id}">
                 <div class="question-text">${i + 1}. ${q.question}</div>
                 <div class="question-options">
@@ -400,7 +400,7 @@ class LevelLensContentScript {
       simplified: data.simplified,
       summary: data.summary || '',
       translation: data.translation,
-      quiz: data.quiz
+      quiz: data.quiz ? { questions: data.quiz, originalText: data.originalText } : undefined
     })
   }
 
@@ -569,7 +569,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onQuiz, 
   onTranslate, 
   onClear, 
-  onClose 
+  onClose: _onClose 
 }) => {
   if (!state.visible) return null
 
