@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import type { UserSettings, SimplificationResponse, QuizResponse, TranslationResponse, AICapabilities } from '../types'
+import type { UserSettings, SimplificationResponse, QuizResponse, AICapabilities } from '../types'
 
 // Minimum text length to show simplification toolbar
 const MIN_TEXT_LENGTH = 8
@@ -18,7 +18,6 @@ interface SimplificationOverlay {
   originalText: string
   simplified: string
   summary: string
-  translation?: string
   quiz?: QuizResponse
 }
 
@@ -26,8 +25,9 @@ class HiloContentScript {
   private shadowRoot: ShadowRoot | null = null
   private toolbarRoot: any = null
   private activeOverlays: Map<string, SimplificationOverlay> = new Map()
-  private settings: UserSettings = { level: 'B1', outputLanguage: 'en', enabled: true }
-  private aiCapabilities: AICapabilities = { languageModel: false, summarizer: false, translator: false, writer: false }
+  private settings: UserSettings = { level: 'B1', enabled: true }
+  private aiCapabilities: AICapabilities = { languageModel: false, summarizer: false, writer: false }
+  private currentToolbarState: ToolbarState | null = null
 
   constructor() {
     this.init()
@@ -57,6 +57,7 @@ class HiloContentScript {
       const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' })
       if (response.success) {
         this.settings = response.data
+        console.log('Hilo: Settings updated to:', this.settings)
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -201,9 +202,15 @@ class HiloContentScript {
     })
     
     // Listen for settings changes and page adjustment requests
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener(async (message) => {
       if (message.type === 'SETTINGS_CHANGED') {
-        this.loadSettings()
+        console.log('Hilo: Received SETTINGS_CHANGED message')
+        await this.loadSettings()
+        // Re-render toolbar if it's currently visible
+        if (this.currentToolbarState && this.currentToolbarState.visible) {
+          console.log('Hilo: Re-rendering toolbar with new settings')
+          this.showToolbar(this.currentToolbarState)
+        }
       } else if (message.type === 'ADJUST_PAGE') {
         this.adjustEntirePage(message.settings || this.settings)
       }
@@ -238,6 +245,11 @@ class HiloContentScript {
   private showToolbar(state: ToolbarState) {
     if (!this.toolbarRoot || !this.settings.enabled) return
 
+    // Store current toolbar state so we can re-render when settings change
+    this.currentToolbarState = state
+
+    console.log('Hilo: Rendering toolbar with level:', this.settings.level)
+
     this.toolbarRoot.render(
       <Toolbar
         state={state}
@@ -245,7 +257,6 @@ class HiloContentScript {
         settings={this.settings}
         onSimplify={this.handleSimplify.bind(this)}
         onQuiz={this.handleQuiz.bind(this)}
-        onTranslate={this.handleTranslate.bind(this)}
         onClear={this.handleClear.bind(this)}
         onClose={this.hideToolbar.bind(this)}
       />
@@ -255,6 +266,9 @@ class HiloContentScript {
   private hideToolbar() {
     if (!this.toolbarRoot) return
     
+    // Clear current toolbar state
+    this.currentToolbarState = null
+    
     this.toolbarRoot.render(
       <Toolbar
         state={{ visible: false, x: 0, y: 0, selectedText: '' }}
@@ -262,7 +276,6 @@ class HiloContentScript {
         settings={this.settings}
         onSimplify={() => {}}
         onQuiz={() => {}}
-        onTranslate={() => {}}
         onClear={() => {}}
         onClose={() => {}}
       />
@@ -339,41 +352,6 @@ class HiloContentScript {
     this.hideToolbar()
   }
 
-  private async handleTranslate(selectedText: string, x: number, y: number) {
-    // Show loading indicator
-    this.showLoadingIndicator(x, y, 'Translating...')
-    
-    try {
-      // Send translation request to background
-      const response = await chrome.runtime.sendMessage({
-        type: 'TRANSLATE_TEXT',
-        text: selectedText,
-        settings: this.settings
-      })
-
-      this.hideLoadingIndicator()
-
-      if (response.success) {
-        this.showTranslationOverlay(response.data, x, y)
-      } else {
-        console.error('Translation failed:', response.error)
-        this.showErrorNotification(
-          'Translation Failed',
-          response.error || 'Unable to translate the selected text. Please try again.'
-        )
-      }
-    } catch (error) {
-      this.hideLoadingIndicator()
-      console.error('Error during translation:', error)
-      this.showErrorNotification(
-        'Connection Error',
-        'Could not connect to the translation service. Please check your connection and try again.'
-      )
-    }
-    
-    this.hideToolbar()
-  }
-
   private handleClear() {
     this.activeOverlays.forEach((overlay) => {
       overlay.element.remove()
@@ -394,7 +372,6 @@ class HiloContentScript {
     
     const overlayId = Date.now().toString()
     
-    const hasTranslation = data.translation && data.translation.length > 0
     const hasQuiz = data.quiz && data.quiz.length > 0
     
     overlay.innerHTML = `
@@ -404,12 +381,6 @@ class HiloContentScript {
       </div>
       <div class="ll-overlay-content">${data.simplified}</div>
       ${data.summary ? `<div class="ll-overlay-summary">${data.summary}</div>` : ''}
-      ${hasTranslation ? `
-        <div class="ll-overlay-section">
-          <div class="ll-overlay-section-title">Translation (${this.settings.outputLanguage.toUpperCase()}):</div>
-          <div class="ll-overlay-translation">${data.translation}</div>
-        </div>
-      ` : ''}
       ${hasQuiz ? `
         <div class="ll-overlay-section">
           <div class="ll-overlay-section-title">Quick Quiz:</div>
@@ -444,7 +415,6 @@ class HiloContentScript {
       originalText: data.originalText,
       simplified: data.simplified,
       summary: data.summary || '',
-      translation: data.translation,
       quiz: data.quiz ? { questions: data.quiz, originalText: data.originalText } : undefined
     })
   }
@@ -534,54 +504,6 @@ class HiloContentScript {
       simplified: '',
       summary: '',
       quiz: quizData
-    })
-  }
-
-  private showTranslationOverlay(translationData: TranslationResponse, x: number, y: number) {
-    const overlay = document.createElement('div')
-    overlay.className = 'll-overlay ll-translation-overlay'
-    overlay.style.cssText = `
-      position: fixed;
-      left: ${Math.min(x, window.innerWidth - 420)}px;
-      top: ${Math.min(y + 60, window.innerHeight - 200)}px;
-      z-index: 2147483646;
-    `
-    
-    const overlayId = Date.now().toString()
-    
-    overlay.innerHTML = `
-      <div class="ll-overlay-header">
-        <span>Hilo Translation ${this.aiCapabilities.translator ? '🤖' : '🌐'}</span>
-        <button class="ll-overlay-close" data-overlay-id="${overlayId}">×</button>
-      </div>
-      <div class="ll-overlay-content">
-        <div class="translation-pair">
-          <div class="source-text">
-            <div class="language-label">${translationData.sourceLanguage.toUpperCase()}:</div>
-            <div class="text-content">${translationData.originalText}</div>
-          </div>
-          <div class="target-text">
-            <div class="language-label">${translationData.targetLanguage.toUpperCase()}:</div>
-            <div class="text-content">${translationData.translatedText}</div>
-          </div>
-        </div>
-      </div>
-    `
-    
-    // Add close button listener
-    overlay.querySelector('.ll-overlay-close')?.addEventListener('click', () => {
-      this.removeOverlay(overlayId)
-    })
-    
-    document.body.appendChild(overlay)
-    
-    this.activeOverlays.set(overlayId, {
-      id: overlayId,
-      element: overlay,
-      originalText: translationData.originalText,
-      simplified: '',
-      summary: '',
-      translation: translationData.translatedText
     })
   }
 
@@ -1049,7 +971,6 @@ interface ToolbarProps {
   settings: UserSettings
   onSimplify: (text: string, x: number, y: number) => void
   onQuiz: (text: string, x: number, y: number) => void
-  onTranslate: (text: string, x: number, y: number) => void
   onClear: () => void
   onClose: () => void
 }
@@ -1060,20 +981,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
   settings, 
   onSimplify, 
   onQuiz, 
-  onTranslate, 
   onClear, 
   onClose: _onClose 
 }) => {
   if (!state.visible) return null
 
-  const showTranslate = settings.outputLanguage === 'ja' || aiCapabilities.translator
   const showQuiz = aiCapabilities.writer || state.selectedText.length > 50
+
+  console.log('Hilo Toolbar: Rendering with settings.level =', settings.level)
 
   return (
     <div 
       className="ll-toolbar"
       style={{
-        left: state.x - (showTranslate && showQuiz ? 160 : showTranslate || showQuiz ? 125 : 90),
+        left: state.x - (showQuiz ? 125 : 90),
         top: state.y
       }}
     >
@@ -1091,16 +1012,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title={`Generate quiz ${aiCapabilities.writer ? '(AI Writer)' : '(Local)'}`}
         >
           {aiCapabilities.writer ? '🤖' : '📝'} Quiz
-        </button>
-      )}
-      
-      {showTranslate && (
-        <button 
-          className="secondary" 
-          onClick={() => onTranslate(state.selectedText, state.x, state.y)}
-          title={`Translate to ${settings.outputLanguage.toUpperCase()} ${aiCapabilities.translator ? '(AI)' : '(Local)'}`}
-        >
-          {aiCapabilities.translator ? '🤖' : '🌐'} Translate
         </button>
       )}
       

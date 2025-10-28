@@ -6,7 +6,6 @@ import type {
   SimplifiedCaptionLine,
   QuizQuestion,
   QuizResponse,
-  TranslationResponse,
   AICapabilities
 } from '../types'
 
@@ -134,12 +133,6 @@ export function simplifyText(text: string, settings: UserSettings): Simplificati
       ? simplified.substring(0, 57) + '...'
       : simplified
 
-    // Apply language output if Japanese is requested
-    if (settings.outputLanguage === 'ja') {
-      // Simple stub for Japanese output - in real implementation this would use proper translation
-      simplified = `[簡単] ${simplified}`
-    }
-
     return {
       simplified,
       summary,
@@ -173,7 +166,6 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
-      translator: false,
       writer: false
     }
 
@@ -202,18 +194,6 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       }
     }
 
-    // Check Translator API
-    if ('translation' in window) {
-      try {
-        capabilities.translator = await (window as any).translation.canTranslate({
-          sourceLanguage: 'en',
-          targetLanguage: 'ja'
-        }) === 'readily'
-      } catch (e) {
-        console.log('Translator API not available:', e)
-      }
-    }
-
     // Check Writer API
     if ('ai' in window && 'writer' in (window as any).ai) {
       try {
@@ -230,7 +210,6 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
     return {
       languageModel: false,
       summarizer: false,
-      translator: false,
       writer: false
     }
   }
@@ -240,7 +219,6 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
   let session: any = null
   let summarizer: any = null
-  let translator: any = null
   
   try {
     const capabilities = await checkAICapabilities()
@@ -271,26 +249,10 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
         }
       }
 
-      let translation = ''
-      if (capabilities.translator && settings.outputLanguage === 'ja') {
-        try {
-          // Use Translator API for Japanese translation
-          translator = await (window as any).translation.createTranslator({
-            sourceLanguage: 'en',
-            targetLanguage: 'ja'
-          })
-          translation = await translator.translate(simplified)
-        } catch (translationError) {
-          console.warn('Translation failed:', translationError)
-          translation = `[翻訳] ${simplified}`
-        }
-      }
-
       return {
         simplified: simplified.trim(),
         summary: summary || (simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified),
-        originalText: text,
-        translation: translation || undefined
+        originalText: text
       }
     } else {
       // Fallback to local simplification
@@ -308,7 +270,6 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     try {
       if (session) session.destroy()
       if (summarizer) summarizer.destroy()
-      if (translator) translator.destroy()
     } catch (cleanupError) {
       console.warn('Resource cleanup error:', cleanupError)
     }
@@ -346,46 +307,6 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     console.error('AI quiz generation error:', error)
     // Fallback to local quiz generation
     return generateQuizLocal(text, settings)
-  }
-}
-
-export async function translateTextAI(text: string, settings: UserSettings): Promise<TranslationResponse> {
-  try {
-    const capabilities = await checkAICapabilities()
-    
-    if (capabilities.translator && settings.outputLanguage === 'ja') {
-      // Use Translator API
-      const translator = await (window as any).translation.createTranslator({
-        sourceLanguage: 'en',
-        targetLanguage: 'ja'
-      })
-      
-      const translatedText = await translator.translate(text)
-      translator.destroy()
-
-      return {
-        translatedText,
-        originalText: text,
-        sourceLanguage: 'en',
-        targetLanguage: 'ja'
-      }
-    } else {
-      // Fallback to local translation stub
-      return {
-        translatedText: `[翻訳] ${text}`,
-        originalText: text,
-        sourceLanguage: 'en',
-        targetLanguage: settings.outputLanguage
-      }
-    }
-  } catch (error) {
-    console.error('AI translation error:', error)
-    return {
-      translatedText: `[翻訳エラー] ${text}`,
-      originalText: text,
-      sourceLanguage: 'en',
-      targetLanguage: settings.outputLanguage
-    }
   }
 }
 

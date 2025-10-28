@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getSettings, saveSettings, getStatistics } from '../lib/storage'
-import type { CEFRLevel, OutputLanguage, UserSettings, AICapabilities, UsageStatistics } from '../types'
+import type { CEFRLevel, UserSettings, AICapabilities, UsageStatistics } from '../types'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string }[] = [
   { value: 'A1', label: 'A1 - Beginner', description: 'Very simple words and phrases' },
@@ -11,31 +11,22 @@ const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string }[] = 
   { value: 'C1', label: 'C1 - Advanced', description: 'Flexible and effective language' }
 ]
 
-const OUTPUT_LANGUAGES: { value: OutputLanguage; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'ja', label: '日本語' }
-]
-
 const PopupApp: React.FC = () => {
   const [settings, setSettings] = useState<UserSettings>({
     level: 'B1',
-    outputLanguage: 'en',
     enabled: true
   })
   const [aiCapabilities, setAiCapabilities] = useState<AICapabilities>({
     languageModel: false,
     summarizer: false,
-    translator: false,
     writer: false
   })
   const [statistics, setStatistics] = useState<UsageStatistics>({
     totalSimplifications: 0,
     totalQuizzes: 0,
-    totalTranslations: 0,
     totalWords: 0,
     todaySimplifications: 0,
     todayQuizzes: 0,
-    todayTranslations: 0,
     todayWords: 0,
     lastResetDate: new Date().toDateString()
   })
@@ -258,22 +249,6 @@ const PopupApp: React.FC = () => {
           </p>
         </div>
 
-        <div className="setting-group">
-          <label className="setting-title">Output Language</label>
-          <select
-            value={settings.outputLanguage}
-            onChange={(e) => handleSettingChange('outputLanguage', e.target.value as OutputLanguage)}
-            disabled={saving || !settings.enabled}
-            className="setting-select"
-          >
-            {OUTPUT_LANGUAGES.map(lang => (
-              <option key={lang.value} value={lang.value}>
-                {lang.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className="capabilities-section">
           <h3 className="section-title">System Status</h3>
           <div className="capabilities-grid">
@@ -284,10 +259,6 @@ const PopupApp: React.FC = () => {
             <div className={`capability-item ${aiCapabilities.writer ? 'active' : 'inactive'}`}>
               <div className="capability-icon">{aiCapabilities.writer ? '●' : '○'}</div>
               <div className="capability-label">Quiz</div>
-            </div>
-            <div className={`capability-item ${aiCapabilities.translator ? 'active' : 'inactive'}`}>
-              <div className="capability-icon">{aiCapabilities.translator ? '●' : '○'}</div>
-              <div className="capability-label">Translation</div>
             </div>
             <div className={`capability-item ${aiCapabilities.summarizer ? 'active' : 'inactive'}`}>
               <div className="capability-icon">{aiCapabilities.summarizer ? '●' : '○'}</div>
@@ -312,8 +283,8 @@ const PopupApp: React.FC = () => {
               <div className="stat-label">Words</div>
             </div>
             <div className="stat-box">
-              <div className="stat-value">{statistics.todayQuizzes + statistics.todayTranslations}</div>
-              <div className="stat-label">Actions</div>
+              <div className="stat-value">{statistics.todayQuizzes}</div>
+              <div className="stat-label">Quizzes</div>
             </div>
           </div>
         </div>
@@ -327,7 +298,7 @@ const PopupApp: React.FC = () => {
             </div>
             <div className="guide-step">
               <span className="step-number">2</span>
-              <span className="step-text">Click Adjust Level, Quiz, or Translate</span>
+              <span className="step-text">Click Adjust Level or Quiz</span>
             </div>
             <div className="guide-step">
               <span className="step-number">3</span>

@@ -2,10 +2,9 @@ import {
   simplifyTextAI, 
   simplifyCaptionsAI, 
   generateQuizAI, 
-  translateTextAI,
   checkAICapabilities
 } from '../lib/ai'
-import { getSettings, incrementSimplification, incrementQuiz, incrementTranslation } from '../lib/storage'
+import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
 import { 
   validateTextInput, 
   validateSettings, 
@@ -17,8 +16,7 @@ import type {
   MessageResponse, 
   SimplificationRequest, 
   CaptionSimplificationRequest,
-  QuizRequest,
-  TranslationRequest
+  QuizRequest
 } from '../types'
 
 // Handle installation
@@ -54,7 +52,15 @@ async function handleMessage(
     // Get current user settings
     const settings = await getSettings()
     
-    // Check if extension is enabled
+    // Allow GET_SETTINGS even when extension is disabled
+    if (request.type === 'GET_SETTINGS') {
+      return {
+        success: true,
+        data: settings
+      }
+    }
+    
+    // Check if extension is enabled for other requests
     if (!settings.enabled) {
       return {
         success: false,
@@ -71,9 +77,6 @@ async function handleMessage(
       
       case 'GENERATE_QUIZ':
         return await handleQuizGeneration(request as QuizRequest)
-      
-      case 'TRANSLATE_TEXT':
-        return await handleTranslation(request as TranslationRequest)
       
       case 'CHECK_AI_CAPABILITIES':
         return await handleAICapabilityCheck()
@@ -226,42 +229,6 @@ async function handleQuizGeneration(
   }
 }
 
-async function handleTranslation(
-  request: TranslationRequest
-): Promise<MessageResponse> {
-  try {
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // Validate input
-    if (!request.text || request.text.trim().length === 0) {
-      return {
-        success: false,
-        error: 'No text provided for translation'
-      }
-    }
-
-    // Translate text using AI
-    const result = await translateTextAI(request.text, settings)
-    
-    // Track usage statistics
-    const wordCount = request.text.split(/\s+/).filter(word => word.length > 0).length
-    await incrementTranslation(wordCount)
-    
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Translation error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Translation failed'
-    }
-  }
-}
-
 async function handleAICapabilityCheck(): Promise<MessageResponse> {
   try {
     const capabilities = await checkAICapabilities()
@@ -282,15 +249,18 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
 // Handle storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync') {
+    console.log('Hilo: Storage changed, broadcasting to all tabs:', changes)
     // Broadcast settings changes to all tabs
     chrome.tabs.query({}, (tabs) => {
+      console.log(`Hilo: Broadcasting SETTINGS_CHANGED to ${tabs.length} tabs`)
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
             type: 'SETTINGS_CHANGED',
             changes
-          }).catch(() => {
+          }).catch((error) => {
             // Ignore errors for tabs that don't have content scripts
+            console.log(`Hilo: Could not send message to tab ${tab.id}:`, error.message)
           })
         }
       })

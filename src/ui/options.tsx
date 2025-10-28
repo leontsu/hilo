@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getSettings, saveSettings } from '../lib/storage'
-import type { CEFRLevel, OutputLanguage, UserSettings } from '../types'
+import type { CEFRLevel, UserSettings } from '../types'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string; examples: string[] }[] = [
   {
@@ -36,15 +36,9 @@ const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string; examp
   }
 ]
 
-const OUTPUT_LANGUAGES: { value: OutputLanguage; label: string; description: string }[] = [
-  { value: 'en', label: 'English', description: 'Adjust text level while keeping English language' },
-  { value: 'ja', label: '日本語 (Japanese)', description: 'Translate and adjust to Japanese' }
-]
-
 const OptionsApp: React.FC = () => {
   const [settings, setSettings] = useState<UserSettings>({
     level: 'B1',
-    outputLanguage: 'en',
     enabled: true
   })
   const [loading, setLoading] = useState(true)
@@ -72,8 +66,10 @@ const OptionsApp: React.FC = () => {
     
     try {
       const newSettings = { ...settings, [key]: value }
+      console.log('Hilo: Saving setting change:', key, '=', value)
       await saveSettings({ [key]: value })
       setSettings(newSettings)
+      console.log('Hilo: Settings saved successfully:', newSettings)
       setSaveMessage('Settings saved successfully!')
       
       setTimeout(() => setSaveMessage(''), 3000)
@@ -91,7 +87,6 @@ const OptionsApp: React.FC = () => {
       try {
         const defaultSettings: UserSettings = {
           level: 'B1',
-          outputLanguage: 'en',
           enabled: true
         }
         await saveSettings(defaultSettings)
@@ -177,29 +172,6 @@ const OptionsApp: React.FC = () => {
                   </ul>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <h2>Output Language</h2>
-          
-          <div className="language-options">
-            {OUTPUT_LANGUAGES.map(lang => (
-              <label key={lang.value} className="language-option">
-                <input
-                  type="radio"
-                  name="outputLanguage"
-                  value={lang.value}
-                  checked={settings.outputLanguage === lang.value}
-                  onChange={() => handleSettingChange('outputLanguage', lang.value)}
-                  disabled={saving || !settings.enabled}
-                />
-                <div className="language-info">
-                  <h3>{lang.label}</h3>
-                  <p>{lang.description}</p>
-                </div>
-              </label>
             ))}
           </div>
         </section>

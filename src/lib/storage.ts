@@ -1,17 +1,15 @@
-import type { UserSettings, CEFRLevel, OutputLanguage, UsageStatistics } from '../types'
+import type { UserSettings, CEFRLevel, UsageStatistics } from '../types'
 
 const DEFAULT_SETTINGS: UserSettings = {
   level: 'B1',
-  outputLanguage: 'en',
   enabled: true
 }
 
 export async function getSettings(): Promise<UserSettings> {
   try {
-    const result = await chrome.storage.sync.get(['level', 'outputLanguage', 'enabled'])
+    const result = await chrome.storage.sync.get(['level', 'enabled'])
     return {
       level: (result.level as CEFRLevel) || DEFAULT_SETTINGS.level,
-      outputLanguage: (result.outputLanguage as OutputLanguage) || DEFAULT_SETTINGS.outputLanguage,
       enabled: result.enabled !== undefined ? result.enabled : DEFAULT_SETTINGS.enabled
     }
   } catch (error) {
@@ -33,10 +31,6 @@ export async function updateLevel(level: CEFRLevel): Promise<void> {
   await saveSettings({ level })
 }
 
-export async function updateOutputLanguage(outputLanguage: OutputLanguage): Promise<void> {
-  await saveSettings({ outputLanguage })
-}
-
 export async function updateEnabled(enabled: boolean): Promise<void> {
   await saveSettings({ enabled })
 }
@@ -52,11 +46,9 @@ export function removeSettingsListener(callback: (changes: chrome.storage.Storag
 const DEFAULT_STATISTICS: UsageStatistics = {
   totalSimplifications: 0,
   totalQuizzes: 0,
-  totalTranslations: 0,
   totalWords: 0,
   todaySimplifications: 0,
   todayQuizzes: 0,
-  todayTranslations: 0,
   todayWords: 0,
   lastResetDate: new Date().toDateString()
 }
@@ -73,7 +65,6 @@ export async function getStatistics(): Promise<UsageStatistics> {
         ...stats,
         todaySimplifications: 0,
         todayQuizzes: 0,
-        todayTranslations: 0,
         todayWords: 0,
         lastResetDate: today
       }
@@ -115,18 +106,6 @@ export async function incrementQuiz(): Promise<void> {
     ...stats,
     totalQuizzes: stats.totalQuizzes + 1,
     todayQuizzes: stats.todayQuizzes + 1
-  }
-  await saveStatistics(newStats)
-}
-
-export async function incrementTranslation(wordCount: number): Promise<void> {
-  const stats = await getStatistics()
-  const newStats = {
-    ...stats,
-    totalTranslations: stats.totalTranslations + 1,
-    totalWords: stats.totalWords + wordCount,
-    todayTranslations: stats.todayTranslations + 1,
-    todayWords: stats.todayWords + wordCount
   }
   await saveStatistics(newStats)
 }

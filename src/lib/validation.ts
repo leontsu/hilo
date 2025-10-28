@@ -1,6 +1,6 @@
 // Input validation and security utilities
 
-import type { CEFRLevel, OutputLanguage, UserSettings } from '../types'
+import type { CEFRLevel, UserSettings } from '../types'
 
 // Constants for validation
 export const VALIDATION_LIMITS = {
@@ -15,9 +15,6 @@ export const VALIDATION_LIMITS = {
 
 // Valid CEFR levels
 const VALID_CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1']
-
-// Valid output languages
-const VALID_OUTPUT_LANGUAGES: OutputLanguage[] = ['en', 'ja']
 
 // Rate limiting store
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -82,10 +79,6 @@ export function validateTextInput(text: string): { isValid: boolean; error?: str
 export function validateSettings(settings: Partial<UserSettings>): { isValid: boolean; error?: string } {
   if (settings.level && !VALID_CEFR_LEVELS.includes(settings.level)) {
     return { isValid: false, error: 'Invalid CEFR level' }
-  }
-
-  if (settings.outputLanguage && !VALID_OUTPUT_LANGUAGES.includes(settings.outputLanguage)) {
-    return { isValid: false, error: 'Invalid output language' }
   }
 
   if (settings.enabled !== undefined && typeof settings.enabled !== 'boolean') {
