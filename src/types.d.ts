@@ -1,20 +1,16 @@
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1'
-export type OutputLanguage = 'en' | 'ja'
 
 export interface UserSettings {
   level: CEFRLevel
-  outputLanguage: OutputLanguage
   enabled: boolean
 }
 
 export interface UsageStatistics {
   totalSimplifications: number
   totalQuizzes: number
-  totalTranslations: number
   totalWords: number
   todaySimplifications: number
   todayQuizzes: number
-  todayTranslations: number
   todayWords: number
   lastResetDate: string
 }
@@ -34,7 +30,6 @@ export interface SimplificationResponse {
   simplified: string
   summary?: string
   originalText: string
-  translation?: string
   quiz?: QuizQuestion[]
 }
 
@@ -81,25 +76,10 @@ export interface QuizResponse {
   originalText: string
 }
 
-// Translation types
-export interface TranslationRequest {
-  type: 'TRANSLATE_TEXT'
-  text: string
-  settings: UserSettings
-}
-
-export interface TranslationResponse {
-  translatedText: string
-  originalText: string
-  sourceLanguage: string
-  targetLanguage: string
-}
-
 // AI Service types
 export interface AICapabilities {
   languageModel: boolean
   summarizer: boolean
-  translator: boolean
   writer: boolean
 }
 
@@ -109,6 +89,10 @@ export interface AICapabilityRequest {
 
 export interface AICapabilityResponse {
   capabilities: AICapabilities
+}
+
+export interface GetSettingsRequest {
+  type: 'GET_SETTINGS'
 }
 
 // Chrome AI API types
@@ -127,10 +111,6 @@ declare global {
         create: (options?: any) => Promise<any>
         capabilities: () => Promise<any>
       }
-    }
-    translation?: {
-      createTranslator: (options: any) => Promise<any>
-      canTranslate: (options: any) => Promise<string>
     }
   }
   
@@ -166,11 +146,11 @@ export type MessageRequest =
   | PageAdjustmentRequest
   | CaptionSimplificationRequest
   | QuizRequest
-  | TranslationRequest
   | AICapabilityRequest
+  | GetSettingsRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse
+  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | AICapabilityResponse | UserSettings
   error?: string
 }
