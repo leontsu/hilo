@@ -2,9 +2,9 @@ import { defineManifest } from '@crxjs/vite-plugin'
 
 export default defineManifest({
   manifest_version: 3,
-  name: 'LevelLens - Adaptive Translator',
+  name: 'Hilo - Adaptive Translator',
   version: '1.0.0',
-  description: 'Adaptive Translator for the Real Web - Simplify content to your CEFR level',
+  description: 'Adaptive Translator for the Real Web - Adjust content to your CEFR level',
   
   permissions: [
     'storage',
@@ -39,7 +39,7 @@ export default defineManifest({
   
   action: {
     default_popup: 'src/ui/popup.html',
-    default_title: 'LevelLens Settings'
+    default_title: 'Hilo Settings'
   },
   
   options_ui: {
