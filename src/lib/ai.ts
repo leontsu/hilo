@@ -164,6 +164,13 @@ export function simplifyCaptions(lines: CaptionLine[], settings: UserSettings): 
 // AI Capability Detection
 export async function checkAICapabilities(): Promise<AICapabilities> {
   try {
+    console.log('Hilo AI: Starting capability check...')
+    console.log('Hilo AI: globalThis keys:', Object.keys(globalThis))
+    console.log('Hilo AI: LanguageModel type:', typeof (globalThis as any).LanguageModel)
+    console.log('Hilo AI: Summarizer type:', typeof (globalThis as any).Summarizer)
+    console.log('Hilo AI: Writer type:', typeof (globalThis as any).Writer)
+    console.log('Hilo AI: translation type:', typeof (globalThis as any).translation)
+    
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
@@ -173,57 +180,73 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
 
     // Return default capabilities if window is not available (e.g., in service worker)
     if (typeof window === 'undefined') {
+      console.log('Hilo AI: Window is undefined, returning default capabilities')
       return capabilities
     }
 
     // Check Language Model API (global LanguageModel function)
     if (typeof (globalThis as any).LanguageModel === 'function') {
       try {
+        console.log('Hilo AI: Checking LanguageModel availability...')
         const status = await (globalThis as any).LanguageModel.availability()
+        console.log('Hilo AI: LanguageModel status:', status)
         capabilities.languageModel = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('LanguageModel not available:', e)
+        console.log('Hilo AI: LanguageModel not available:', e)
       }
+    } else {
+      console.log('Hilo AI: LanguageModel is not a function')
     }
 
     // Check Summarizer API (global Summarizer function)
     if (typeof (globalThis as any).Summarizer === 'function') {
       try {
+        console.log('Hilo AI: Checking Summarizer availability...')
         const status = await (globalThis as any).Summarizer.availability()
+        console.log('Hilo AI: Summarizer status:', status)
         capabilities.summarizer = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('Summarizer not available:', e)
+        console.log('Hilo AI: Summarizer not available:', e)
       }
+    } else {
+      console.log('Hilo AI: Summarizer is not a function')
     }
 
     // Check Writer API (global Writer function)
     if (typeof (globalThis as any).Writer === 'function') {
       try {
+        console.log('Hilo AI: Checking Writer availability...')
         const status = await (globalThis as any).Writer.availability()
+        console.log('Hilo AI: Writer status:', status)
         capabilities.writer = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('Writer not available:', e)
+        console.log('Hilo AI: Writer not available:', e)
       }
+    } else {
+      console.log('Hilo AI: Writer is not a function')
     }
 
     // Check Translation API (using global translation function)
     if (typeof (globalThis as any).translation === 'object') {
       try {
+        console.log('Hilo AI: Checking Translation availability...')
         const canTranslate = await (globalThis as any).translation.canTranslate({
           sourceLanguage: 'en',
           targetLanguage: 'ja'
         })
+        console.log('Hilo AI: Translation canTranslate:', canTranslate)
         capabilities.translator = canTranslate === 'readily' || canTranslate === 'downloadable'
-        console.log('Translation canTranslate:', canTranslate)
       } catch (e) {
-        console.log('Translation API not available:', e)
+        console.log('Hilo AI: Translation API not available:', e)
       }
+    } else {
+      console.log('Hilo AI: translation is not an object')
     }
 
-    console.log('Final AI capabilities:', capabilities)
+    console.log('Hilo AI: Final AI capabilities:', capabilities)
     return capabilities
   } catch (error) {
-    console.error('Error checking AI capabilities:', error)
+    console.error('Hilo AI: Error checking AI capabilities:', error)
     return {
       languageModel: false,
       summarizer: false,

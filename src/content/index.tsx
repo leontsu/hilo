@@ -36,20 +36,28 @@ class HiloContentScript {
   private async init() {
     // Don't initialize on YouTube (handled by separate script)
     if (window.location.hostname.includes('youtube.com')) {
+      console.log('Hilo: Skipping initialization on YouTube')
       return
     }
 
+    console.log('Hilo: Starting content script initialization...')
+
     // Load settings and check AI capabilities
     await this.loadSettings()
+    console.log('Hilo: Settings loaded:', this.settings)
+    
     await this.checkAICapabilities()
+    console.log('Hilo: AI capabilities checked:', this.aiCapabilities)
     
     // Create shadow DOM container
     this.createShadowContainer()
+    console.log('Hilo: Shadow DOM container created')
     
     // Setup event listeners
     this.setupEventListeners()
+    console.log('Hilo: Event listeners setup completed')
     
-    console.log('Hilo content script initialized with AI capabilities:', this.aiCapabilities)
+    console.log('Hilo content script initialized successfully!')
   }
 
   private async loadSettings() {
@@ -283,16 +291,23 @@ class HiloContentScript {
   }
 
   private async handleSimplify(selectedText: string, x: number, y: number) {
+    console.log('Hilo: handleSimplify called with:', { selectedText, x, y, settings: this.settings })
+    alert('Button clicked! Check console for details.')
+    
     // Show loading indicator
     this.showLoadingIndicator(x, y, 'Adjusting level...')
     
     try {
+      console.log('Hilo: Sending SIMPLIFY_TEXT message to background...')
+      
       // Send adjustment request to background
       const response = await chrome.runtime.sendMessage({
         type: 'SIMPLIFY_TEXT',
         text: selectedText,
         settings: this.settings
       })
+      
+      console.log('Hilo: Received response from background:', response)
 
       this.hideLoadingIndicator()
 

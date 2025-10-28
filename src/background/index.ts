@@ -2,6 +2,7 @@ import {
   simplifyTextAI, 
   simplifyCaptionsAI, 
   generateQuizAI, 
+  translateTextAI,
   checkAICapabilities
 } from '../lib/ai'
 import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
@@ -16,7 +17,9 @@ import type {
   MessageResponse, 
   SimplificationRequest, 
   CaptionSimplificationRequest,
-  QuizRequest
+  QuizRequest,
+  TranslationRequest,
+  PageAdjustmentRequest
 } from '../types'
 
 // Handle installation
@@ -30,14 +33,21 @@ chrome.runtime.onMessage.addListener((
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: MessageResponse) => void
 ) => {
+  console.log('Hilo Background: Received message:', request.type, request)
+  
   handleMessage(request, sender)
-    .then(response => sendResponse(response))
+    .then(response => {
+      console.log('Hilo Background: Sending response:', response)
+      sendResponse(response)
+    })
     .catch(error => {
       console.error('Background message error:', error)
-      sendResponse({
+      const errorResponse = {
         success: false,
         error: error.message || 'Unknown error occurred'
-      })
+      }
+      console.log('Hilo Background: Sending error response:', errorResponse)
+      sendResponse(errorResponse)
     })
   
   // Return true to indicate async response
@@ -80,6 +90,12 @@ async function handleMessage(
       
       case 'CHECK_AI_CAPABILITIES':
         return await handleAICapabilityCheck()
+      
+      case 'TRANSLATE_TEXT':
+        return await handleTranslation(request as TranslationRequest)
+      
+      case 'ADJUST_PAGE':
+        return await handlePageAdjustment(request as PageAdjustmentRequest)
       
       default:
         return {
@@ -242,6 +258,63 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'AI capability check failed'
+    }
+  }
+}
+
+async function handleTranslation(
+  request: TranslationRequest
+): Promise<MessageResponse> {
+  try {
+    // Validate input
+    if (!request.text || request.text.trim().length === 0) {
+      return {
+        success: false,
+        error: 'No text provided for translation'
+      }
+    }
+
+    // Get current settings (override with request settings if provided)
+    const currentSettings = await getSettings()
+    const settings = { ...currentSettings, ...request.settings }
+    
+    // Translate the text using AI
+    const result = await translateTextAI(request.text, settings)
+    
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Translation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Translation failed'
+    }
+  }
+}
+
+async function handlePageAdjustment(
+  request: PageAdjustmentRequest
+): Promise<MessageResponse> {
+  try {
+    // Get current settings (override with request settings if provided)
+    const currentSettings = await getSettings()
+    const settings = { ...currentSettings, ...request.settings }
+    
+    // For page adjustment, we just acknowledge the request
+    // The actual work is done by the content script
+    console.log('Page adjustment requested with level:', settings.level)
+    
+    return {
+      success: true,
+      data: { message: 'Page adjustment initiated', settings }
+    }
+  } catch (error) {
+    console.error('Page adjustment error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Page adjustment failed'
     }
   }
 }

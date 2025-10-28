@@ -78,6 +78,12 @@ export interface QuizResponse {
   originalText: string
 }
 
+export interface TranslationRequest {
+  type: 'TRANSLATE_TEXT'
+  text: string
+  settings: UserSettings
+}
+
 export interface TranslationResponse {
   translatedText: string
   originalText: string
@@ -156,11 +162,12 @@ export type MessageRequest =
   | PageAdjustmentRequest
   | CaptionSimplificationRequest
   | QuizRequest
+  | TranslationRequest
   | AICapabilityRequest
   | GetSettingsRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | AICapabilityResponse | UserSettings
+  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | { message: string, settings?: UserSettings }
   error?: string
 }
