@@ -16,10 +16,10 @@ Hilo prioritizes privacy with local processing and provides seamless integration
 
 ### Core Functionality
 - **Text Simplification**: Select any text on web pages (8+ characters) to get simplified versions
-- **YouTube Caption Adaptation**: Real-time caption simplification with easy toggle
+- **YouTube Caption Adaptation**: Native caption integration with real-time simplification and caching
 - **CEFR Level Support**: Choose from A1 (Beginner) to C1 (Advanced) complexity levels
-- **Multi-language Output**: English and Japanese language support
-- **Privacy-First**: Local processing with optional AI enhancement
+- **Privacy-First**: Local processing with optional Chrome Built-in AI enhancement
+- **Performance Optimized**: Smart caption caching prevents redundant processing
 
 ### User Experience
 - **Shadow DOM Integration**: No interference with existing page styles
@@ -39,8 +39,8 @@ Hilo prioritizes privacy with local processing and provides seamless integration
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/levellens-react.git
-   cd levellens-react
+   git clone https://github.com/leontsu/hilo.git
+   cd hilo
    ```
 
 2. **Install dependencies**
@@ -78,15 +78,16 @@ Then load the extension from the `dist` folder as described above. Changes will 
 4. **Clear Overlays**: Use the "Clear" button to remove all simplifications
 
 ### YouTube
-1. **Visit YouTube**: Navigate to any YouTube video
-2. **Enable EASY Mode**: Click the "EASY" button that appears on the video
-3. **Simplified Captions**: Captions will be automatically simplified and displayed at the bottom
+1. **Visit YouTube**: Navigate to any YouTube video with captions
+2. **Enable Hilo**: Click the toggle button that appears on the video player
+3. **Native Caption Integration**: Hilo directly replaces YouTube's captions with simplified versions
+4. **Smart Caching**: Previously simplified captions are cached for instant display
 
 ### Settings
 - **Access Settings**: Click the Hilo icon in Chrome's toolbar
 - **Choose Level**: Select your CEFR level (A1-C1)
-- **Set Language**: Choose English or Japanese output
-- **Advanced Options**: Click "Advanced Settings" for detailed configuration
+- **Toggle Extension**: Enable or disable Hilo functionality
+- **View Statistics**: See how many texts you've simplified (tracked in popup)
 
 ## ⚙️ Configuration
 
@@ -104,28 +105,30 @@ All settings are automatically synced across your Chrome browsers using `chrome.
 
 ### Project Structure
 ```
-levellens-react/
+hilo/
 ├── src/
 │   ├── manifest.ts          # Chrome extension manifest
 │   ├── background/
 │   │   └── index.ts         # Service worker for message handling
 │   ├── content/
 │   │   ├── index.tsx        # Main content script with React
-│   │   ├── youtube.ts       # YouTube-specific functionality
+│   │   ├── youtube.ts       # YouTube caption integration with caching
 │   │   └── styles.css       # Content script styles
 │   ├── ui/
-│   │   ├── popup.tsx        # Extension popup interface
+│   │   ├── popup.tsx        # Extension popup with statistics
 │   │   ├── options.tsx      # Settings page
-│   │   ├── ui.css          # UI component styles
-│   │   ├── popup.html      # Popup HTML template
-│   │   └── options.html    # Options HTML template
+│   │   ├── ui.css           # UI component styles
+│   │   ├── popup.html       # Popup HTML template
+│   │   └── options.html     # Options HTML template
 │   ├── lib/
-│   │   ├── ai.ts           # Simplification logic (stub + AI)
-│   │   └── storage.ts      # Chrome storage utilities
-│   └── types.d.ts          # TypeScript type definitions
-├── vite.config.ts          # Vite build configuration
-├── tsconfig.json           # TypeScript configuration
-└── package.json            # Project dependencies
+│   │   ├── ai.ts            # AI integration + local simplification
+│   │   ├── storage.ts       # Chrome storage utilities
+│   │   ├── validation.ts    # Input validation
+│   │   └── performance.ts   # Performance monitoring
+│   └── types.d.ts           # TypeScript type definitions
+├── vite.config.ts           # Vite build configuration
+├── tsconfig.json            # TypeScript configuration
+└── package.json             # Project dependencies
 ```
 
 ### Available Scripts
@@ -143,40 +146,43 @@ levellens-react/
 
 ## 🤖 Chrome Built-in AI Integration
 
-Hilo is designed to seamlessly integrate with Chrome's Built-in AI APIs. The current implementation uses local simplification stubs that can be easily replaced.
+Hilo automatically detects and uses Chrome's Built-in AI APIs when available:
 
-### AI Replacement Guide
+### Current AI Implementation Status
 
-1. **Update `src/lib/ai.ts`**:
-   Replace the stub functions with Chrome AI calls:
+**✅ Implemented & Ready:**
+- Language Model API detection (`window.ai.languageModel`)
+- Summarizer API detection (`window.ai.summarizer`) 
+- Writer API detection (`globalThis.Writer`)
+- Automatic fallback to local simplification when AI is unavailable
 
-   ```typescript
-   // Replace simplifyText function
-   export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
-     const session = await chrome.aiOriginTrial.languageModel.create({
-       systemPrompt: `Simplify text to CEFR ${settings.level} level...`
-     });
-     
-     const result = await session.prompt(`Simplify: ${text}`);
-     return {
-       simplified: result,
-       summary: result.substring(0, 60) + '...',
-       originalText: text
-     };
-   }
-   ```
+**🔄 How It Works:**
+1. On startup, Hilo checks if Chrome Built-in AI APIs are available
+2. If available: Uses AI for context-aware simplification
+3. If unavailable: Uses local word replacement algorithm
+4. Seamless transition - no configuration needed
 
-2. **Update function calls**:
-   Replace `simplifyText` calls with `simplifyTextAI` in `src/background/index.ts`
+**📋 To Enable Chrome Built-in AI (Optional):**
+> **Note:** Chrome Built-in AI is currently experimental and requires Chrome Canary/Dev
 
-3. **Add AI permissions**:
-   Update `src/manifest.ts` to include AI origin trial permissions
+1. Install [Chrome Canary](https://www.google.com/chrome/canary/)
+2. Enable flags at `chrome://flags/`:
+   - "Prompt API for Gemini Nano" → Enabled
+   - "Optimization Guide On Device Model" → Enabled BypassPerfRequirement
+3. Restart Chrome
+4. Download AI model: Open DevTools Console and run `await ai.languageModel.create()`
+5. Reload Hilo extension
 
-### AI Features Roadmap
-- Real-time translation
-- Context-aware simplification
-- Personalized difficulty adjustment
-- Learning progress tracking
+**🎯 Benefits with AI:**
+- Context-aware text simplification
+- Grammar-level simplification (not just word replacement)
+- Better sentence restructuring
+- Maintains original meaning more accurately
+
+**⚡ Current Performance:**
+- YouTube caption caching reduces redundant API calls
+- Smart processing prevents performance issues
+- All settings automatically saved and synced
 
 ## 🧪 Testing
 
@@ -235,23 +241,26 @@ SOFTWARE.
 
 ## 🎯 Roadmap
 
-### Phase 1 (Current)
-- [x] Basic text simplification
-- [x] YouTube caption support
-- [x] CEFR level configuration
-- [x] Chrome storage integration
+### Phase 1 (Completed ✅)
+- [x] Basic text simplification with word replacement
+- [x] YouTube native caption integration
+- [x] CEFR level configuration (A1-C1)
+- [x] Chrome storage integration with sync
+- [x] Caption caching for performance
+- [x] Chrome Built-in AI detection and integration
+- [x] Usage statistics tracking
 
-### Phase 2 (Planned)
-- [ ] Chrome Built-in AI integration
-- [ ] Advanced context awareness
-- [ ] Learning progress tracking
+### Phase 2 (In Progress 🔄)
+- [x] Performance optimizations (caching, throttling)
+- [ ] Enhanced context awareness
 - [ ] Custom vocabulary lists
+- [ ] Learning progress analytics
 
-### Phase 3 (Future)
-- [ ] Multi-language translation
-- [ ] Audio pronunciation
-- [ ] Learning analytics
-- [ ] Social features
+### Phase 3 (Future 🎯)
+- [ ] Multi-language support expansion
+- [ ] Audio pronunciation assistance
+- [ ] Advanced learning analytics dashboard
+- [ ] Community features and word lists
 
 ## 💡 Inspiration
 
@@ -259,7 +268,10 @@ Hilo was inspired by the need to make web content accessible to language learner
 
 ## 📞 Support
 
-- **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/your-username/levellens-react/issues)
-- **Documentation**: Check our [Wiki](https://github.com/your-username/levellens-react/wiki) for detailed guides
-- **Community**: Join discussions in [GitHub Discussions](https://github.com/your-username/levellens-react/discussions)
+- **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/leontsu/hilo/issues)
+- **Documentation**: Check our documentation files for detailed guides:
+  - [YOUTUBE_CAPTION_IMPROVEMENTS.md](YOUTUBE_CAPTION_IMPROVEMENTS.md) - YouTube feature details
+  - [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) - Performance optimization guide
+  - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
+- **Community**: Join discussions in [GitHub Discussions](https://github.com/leontsu/hilo/discussions)
 

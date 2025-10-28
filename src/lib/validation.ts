@@ -152,6 +152,23 @@ export function escapeHtml(text: string): string {
 }
 
 /**
+ * Decodes HTML entities back to regular characters
+ */
+export function decodeHtmlEntities(text: string): string {
+  if (typeof text !== 'string') {
+    return text
+  }
+  
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&')
+}
+
+/**
  * Validates URL for content scripts
  */
 export function validateURL(url: string): boolean {

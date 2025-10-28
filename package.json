@@ -1,7 +1,7 @@
 {
-  "name": "levellens-react",
+  "name": "hilo",
   "version": "1.0.0",
-  "description": "Adaptive Translator for the Real Web - Chrome Extension with React and Built-in AI",
+  "description": "Hilo - Adaptive Translator for the Real Web - Chrome Extension with React and Built-in AI",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -2,7 +2,6 @@ import {
   simplifyTextAI, 
   simplifyCaptionsAI, 
   generateQuizAI, 
-  translateTextAI,
   checkAICapabilities
 } from '../lib/ai'
 import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
@@ -10,7 +9,8 @@ import {
   validateTextInput, 
   validateSettings, 
   checkRateLimit, 
-  sanitizeText 
+  sanitizeText,
+  decodeHtmlEntities 
 } from '../lib/validation'
 import type { 
   MessageRequest, 
@@ -18,7 +18,6 @@ import type {
   SimplificationRequest, 
   CaptionSimplificationRequest,
   QuizRequest,
-  TranslationRequest,
   PageAdjustmentRequest
 } from '../types'
 
@@ -91,9 +90,6 @@ async function handleMessage(
       case 'CHECK_AI_CAPABILITIES':
         return await handleAICapabilityCheck()
       
-      case 'TRANSLATE_TEXT':
-        return await handleTranslation(request as TranslationRequest)
-      
       case 'ADJUST_PAGE':
         return await handlePageAdjustment(request as PageAdjustmentRequest)
       
@@ -150,6 +146,14 @@ async function handleTextSimplification(
 
     // Simplify the text using AI
     const result = await simplifyTextAI(sanitizedText, settings)
+    
+    // Decode HTML entities in the simplified text
+    if (result.simplified) {
+      result.simplified = decodeHtmlEntities(result.simplified)
+    }
+    if (result.summary) {
+      result.summary = decodeHtmlEntities(result.summary)
+    }
     
     // Track usage statistics
     const wordCount = sanitizedText.split(/\s+/).filter(word => word.length > 0).length
@@ -258,38 +262,6 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'AI capability check failed'
-    }
-  }
-}
-
-async function handleTranslation(
-  request: TranslationRequest
-): Promise<MessageResponse> {
-  try {
-    // Validate input
-    if (!request.text || request.text.trim().length === 0) {
-      return {
-        success: false,
-        error: 'No text provided for translation'
-      }
-    }
-
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // Translate the text using AI
-    const result = await translateTextAI(request.text, settings)
-    
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Translation error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Translation failed'
     }
   }
 }
