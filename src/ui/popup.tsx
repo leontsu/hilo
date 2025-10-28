@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { getSettings, saveSettings } from '../lib/storage'
-import type { CEFRLevel, OutputLanguage, UserSettings, AICapabilities } from '../types'
+import { getSettings, saveSettings, getStatistics } from '../lib/storage'
+import type { CEFRLevel, OutputLanguage, UserSettings, AICapabilities, UsageStatistics } from '../types'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string }[] = [
   { value: 'A1', label: 'A1 - Beginner', description: 'Very simple words and phrases' },
@@ -28,12 +28,24 @@ const PopupApp: React.FC = () => {
     translator: false,
     writer: false
   })
+  const [statistics, setStatistics] = useState<UsageStatistics>({
+    totalSimplifications: 0,
+    totalQuizzes: 0,
+    totalTranslations: 0,
+    totalWords: 0,
+    todaySimplifications: 0,
+    todayQuizzes: 0,
+    todayTranslations: 0,
+    todayWords: 0,
+    lastResetDate: new Date().toDateString()
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadSettings()
     checkAICapabilities()
+    loadStatistics()
   }, [])
 
   const loadSettings = async () => {
@@ -55,6 +67,15 @@ const PopupApp: React.FC = () => {
       }
     } catch (error) {
       console.error('Error checking AI capabilities:', error)
+    }
+  }
+
+  const loadStatistics = async () => {
+    try {
+      const currentStats = await getStatistics()
+      setStatistics(currentStats)
+    } catch (error) {
+      console.error('Error loading statistics:', error)
     }
   }
 
@@ -188,6 +209,56 @@ const PopupApp: React.FC = () => {
                 <div className="capability-name">Summarization</div>
                 <div className="capability-type">{aiCapabilities.summarizer ? 'AI-Powered' : 'Basic'}</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="statistics-section">
+          <div className="statistics-header">
+            <h3>📊 Usage Statistics</h3>
+          </div>
+          <div className="statistics-grid">
+            <div className="stat-card today">
+              <div className="stat-header">
+                <div className="stat-title">Today</div>
+                <div className="stat-icon">🌟</div>
+              </div>
+              <div className="stat-metrics">
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.todaySimplifications}</div>
+                  <div className="metric-label">Simplified</div>
+                </div>
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.todayWords}</div>
+                  <div className="metric-label">Words</div>
+                </div>
+              </div>
+            </div>
+            <div className="stat-card total">
+              <div className="stat-header">
+                <div className="stat-title">All Time</div>
+                <div className="stat-icon">🏆</div>
+              </div>
+              <div className="stat-metrics">
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.totalSimplifications}</div>
+                  <div className="metric-label">Simplified</div>
+                </div>
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.totalWords}</div>
+                  <div className="metric-label">Words</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="activity-summary">
+            <div className="activity-item">
+              <span className="activity-icon">🧠</span>
+              <span className="activity-text">{statistics.todayQuizzes} quizzes today</span>
+            </div>
+            <div className="activity-item">
+              <span className="activity-icon">🌐</span>
+              <span className="activity-text">{statistics.todayTranslations} translations today</span>
             </div>
           </div>
         </div>

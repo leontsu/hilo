@@ -801,3 +801,167 @@ body {
     color: #94a3b8;
   }
 }
+
+/* Statistics section styles */
+.statistics-section {
+  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+}
+
+.statistics-header {
+  margin-bottom: 12px;
+}
+
+.statistics-header h3 {
+  font-size: 14px;
+  margin: 0;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.statistics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
+}
+
+.stat-card.today {
+  border-left: 3px solid #f59e0b;
+}
+
+.stat-card.total {
+  border-left: 3px solid #d97706;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stat-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-icon {
+  font-size: 14px;
+}
+
+.stat-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stat-metric {
+  text-align: center;
+  flex: 1;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #92400e;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: #a16207;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.activity-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 6px 10px;
+  border-radius: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.activity-icon {
+  font-size: 12px;
+}
+
+.activity-text {
+  font-size: 10px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* Dark mode statistics */
+@media (prefers-color-scheme: dark) {
+  .statistics-section {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  
+  .statistics-header h3 {
+    color: #fdba74;
+  }
+  
+  .stat-card {
+    background: rgba(67, 56, 202, 0.1);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+  
+  .stat-card:hover {
+    background: rgba(67, 56, 202, 0.15);
+    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.2);
+  }
+  
+  .stat-title {
+    color: #fdba74;
+  }
+  
+  .metric-value {
+    color: #fed7aa;
+  }
+  
+  .metric-label {
+    color: #fdba74;
+  }
+  
+  .activity-item {
+    background: rgba(67, 56, 202, 0.15);
+  }
+  
+  .activity-text {
+    color: #fdba74;
+  }
+}

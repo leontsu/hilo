@@ -7,6 +7,18 @@ export interface UserSettings {
   enabled: boolean
 }
 
+export interface UsageStatistics {
+  totalSimplifications: number
+  totalQuizzes: number
+  totalTranslations: number
+  totalWords: number
+  todaySimplifications: number
+  todayQuizzes: number
+  todayTranslations: number
+  todayWords: number
+  lastResetDate: string
+}
+
 export interface SimplificationRequest {
   type: 'SIMPLIFY_TEXT'
   text: string

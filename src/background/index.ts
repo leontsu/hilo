@@ -5,7 +5,7 @@ import {
   translateTextAI,
   checkAICapabilities
 } from '../lib/ai'
-import { getSettings } from '../lib/storage'
+import { getSettings, incrementSimplification, incrementQuiz, incrementTranslation } from '../lib/storage'
 import { 
   validateTextInput, 
   validateSettings, 
@@ -132,6 +132,10 @@ async function handleTextSimplification(
     // Simplify the text using AI
     const result = await simplifyTextAI(sanitizedText, settings)
     
+    // Track usage statistics
+    const wordCount = sanitizedText.split(/\s+/).filter(word => word.length > 0).length
+    await incrementSimplification(wordCount)
+    
     return {
       success: true,
       data: result
@@ -206,6 +210,9 @@ async function handleQuizGeneration(
     // Generate quiz using AI
     const result = await generateQuizAI(request.text, settings)
     
+    // Track usage statistics
+    await incrementQuiz()
+    
     return {
       success: true,
       data: result
@@ -237,6 +244,10 @@ async function handleTranslation(
 
     // Translate text using AI
     const result = await translateTextAI(request.text, settings)
+    
+    // Track usage statistics
+    const wordCount = request.text.split(/\s+/).filter(word => word.length > 0).length
+    await incrementTranslation(wordCount)
     
     return {
       success: true,
