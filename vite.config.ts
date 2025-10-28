@@ -11,6 +11,7 @@ export default defineConfig({
       browser: 'chrome'
     })
   ],
+  base: './',
   build: {
     rollupOptions: {
       input: {

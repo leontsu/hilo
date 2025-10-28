@@ -8,6 +8,8 @@
 
 **Hilo** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
 
+> **⚠️ First-time Setup**: After cloning, you MUST run `npm install` and `npm run build` before loading the extension. See [Installation](#installation) below.
+
 Hilo prioritizes privacy with local processing and provides seamless integration with Chrome's native AI capabilities for enhanced learning experiences.
 
 ## 🌟 Features
