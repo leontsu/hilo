@@ -6,7 +6,10 @@ import manifest from './src/manifest'
 export default defineConfig({
   plugins: [
     react(),
-    crx({ manifest })
+    crx({ 
+      manifest,
+      browser: 'chrome'
+    })
   ],
   build: {
     rollupOptions: {
@@ -16,6 +19,7 @@ export default defineConfig({
       }
     }
   },
+  base: './',
   server: {
     port: 5173,
     strictPort: true,

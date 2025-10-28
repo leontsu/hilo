@@ -3,6 +3,7 @@ export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1'
 export interface UserSettings {
   level: CEFRLevel
   enabled: boolean
+  outputLanguage?: string
 }
 
 export interface UsageStatistics {
@@ -31,6 +32,7 @@ export interface SimplificationResponse {
   summary?: string
   originalText: string
   quiz?: QuizQuestion[]
+  translation?: string
 }
 
 export interface CaptionSimplificationRequest {
@@ -76,10 +78,18 @@ export interface QuizResponse {
   originalText: string
 }
 
+export interface TranslationResponse {
+  translatedText: string
+  originalText: string
+  sourceLanguage: string
+  targetLanguage: string
+}
+
 // AI Service types
 export interface AICapabilities {
   languageModel: boolean
   summarizer: boolean
+  translator: boolean
   writer: boolean
 }
 

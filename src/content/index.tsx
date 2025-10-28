@@ -26,7 +26,7 @@ class HiloContentScript {
   private toolbarRoot: any = null
   private activeOverlays: Map<string, SimplificationOverlay> = new Map()
   private settings: UserSettings = { level: 'B1', enabled: true }
-  private aiCapabilities: AICapabilities = { languageModel: false, summarizer: false, writer: false }
+  private aiCapabilities: AICapabilities = { languageModel: false, summarizer: false, translator: false, writer: false }
   private currentToolbarState: ToolbarState | null = null
 
   constructor() {

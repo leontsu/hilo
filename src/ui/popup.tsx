@@ -19,6 +19,7 @@ const PopupApp: React.FC = () => {
   const [aiCapabilities, setAiCapabilities] = useState<AICapabilities>({
     languageModel: false,
     summarizer: false,
+    translator: false,
     writer: false
   })
   const [statistics, setStatistics] = useState<UsageStatistics>({

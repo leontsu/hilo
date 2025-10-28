@@ -6,6 +6,7 @@ import type {
   SimplifiedCaptionLine,
   QuizQuestion,
   QuizResponse,
+  TranslationResponse,
   AICapabilities
 } from '../types'
 
@@ -166,6 +167,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
+      translator: false,
       writer: false
     }
 
@@ -180,7 +182,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         const status = await (globalThis as any).LanguageModel.availability()
         capabilities.languageModel = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('Language Model API not available:', e)
+        console.log('LanguageModel not available:', e)
       }
     }
 
@@ -190,7 +192,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         const status = await (globalThis as any).Summarizer.availability()
         capabilities.summarizer = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('Summarizer API not available:', e)
+        console.log('Summarizer not available:', e)
       }
     }
 
@@ -200,16 +202,32 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         const status = await (globalThis as any).Writer.availability()
         capabilities.writer = status === 'readily' || status === 'downloadable'
       } catch (e) {
-        console.log('Writer API not available:', e)
+        console.log('Writer not available:', e)
       }
     }
 
+    // Check Translation API (using global translation function)
+    if (typeof (globalThis as any).translation === 'object') {
+      try {
+        const canTranslate = await (globalThis as any).translation.canTranslate({
+          sourceLanguage: 'en',
+          targetLanguage: 'ja'
+        })
+        capabilities.translator = canTranslate === 'readily' || canTranslate === 'downloadable'
+        console.log('Translation canTranslate:', canTranslate)
+      } catch (e) {
+        console.log('Translation API not available:', e)
+      }
+    }
+
+    console.log('Final AI capabilities:', capabilities)
     return capabilities
   } catch (error) {
     console.error('Error checking AI capabilities:', error)
     return {
       languageModel: false,
       summarizer: false,
+      translator: false,
       writer: false
     }
   }
@@ -219,17 +237,17 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
   let session: any = null
   let summarizer: any = null
+  let translator: any = null
   
   try {
     const capabilities = await checkAICapabilities()
     
     if (capabilities.languageModel) {
-      // Use global LanguageModel for text simplification
+      // Use LanguageModel API for text simplification
       session = await (globalThis as any).LanguageModel.create({
         systemPrompt: buildSimplificationPrompt(settings.level),
         temperature: 0.7,
-        topK: 3,
-        outputLanguage: 'en'
+        topK: 3
       })
 
       const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
@@ -237,9 +255,11 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
       let summary = ''
       if (capabilities.summarizer) {
         try {
-          // Use global Summarizer for summary
+          // Use Summarizer API for summary
           summarizer = await (globalThis as any).Summarizer.create({
-            outputLanguage: 'en'
+            type: 'tl;dr',
+            format: 'plain-text',
+            length: 'short'
           })
           summary = await summarizer.summarize(simplified)
         } catch (summaryError) {
@@ -248,10 +268,26 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
         }
       }
 
+      let translation = ''
+      if (capabilities.translator && settings.outputLanguage === 'ja') {
+        try {
+          // Use Translator API for Japanese translation
+          translator = await (globalThis as any).translation.createTranslator({
+            sourceLanguage: 'en',
+            targetLanguage: 'ja'
+          })
+          translation = await translator.translate(simplified)
+        } catch (translationError) {
+          console.warn('Translation failed:', translationError)
+          translation = `[翻訳] ${simplified}`
+        }
+      }
+
       return {
         simplified: simplified.trim(),
         summary: summary || (simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified),
-        originalText: text
+        originalText: text,
+        translation: translation || undefined
       }
     } else {
       // Fallback to local simplification
@@ -269,6 +305,7 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     try {
       if (session) session.destroy()
       if (summarizer) summarizer.destroy()
+      if (translator) translator.destroy()
     } catch (cleanupError) {
       console.warn('Resource cleanup error:', cleanupError)
     }
@@ -280,9 +317,11 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     const capabilities = await checkAICapabilities()
     
     if (capabilities.writer) {
-      // Use global Writer API for quiz generation
+      // Use Writer API for quiz generation
       const session = await (globalThis as any).Writer.create({
-        outputLanguage: 'en'
+        format: 'plain-text',
+        tone: 'educational',
+        length: 'medium'
       })
 
       const prompt = buildQuizPrompt(text, settings.level)
@@ -307,12 +346,52 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
   }
 }
 
+export async function translateTextAI(text: string, settings: UserSettings): Promise<TranslationResponse> {
+  try {
+    const capabilities = await checkAICapabilities()
+    
+    if (capabilities.translator && settings.outputLanguage === 'ja') {
+      // Use Translator API
+      const translator = await (globalThis as any).translation.createTranslator({
+        sourceLanguage: 'en',
+        targetLanguage: 'ja'
+      })
+      
+      const translatedText = await translator.translate(text)
+      translator.destroy()
+
+      return {
+        translatedText,
+        originalText: text,
+        sourceLanguage: 'en',
+        targetLanguage: 'ja'
+      }
+    } else {
+      // Fallback to local translation stub
+      return {
+        translatedText: `[翻訳] ${text}`,
+        originalText: text,
+        sourceLanguage: 'en',
+        targetLanguage: settings.outputLanguage || 'ja'
+      }
+    }
+  } catch (error) {
+    console.error('AI translation error:', error)
+    return {
+      translatedText: `[翻訳エラー] ${text}`,
+      originalText: text,
+      sourceLanguage: 'en',
+      targetLanguage: settings.outputLanguage || 'ja'
+    }
+  }
+}
+
 export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSettings): Promise<SimplifiedCaptionLine[]> {
   try {
     const capabilities = await checkAICapabilities()
     
     if (capabilities.languageModel) {
-      const session = await (window as any).ai.languageModel.create({
+      const session = await (globalThis as any).LanguageModel.create({
         systemPrompt: buildSimplificationPrompt(settings.level),
         temperature: 0.7,
         topK: 3

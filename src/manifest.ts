@@ -9,8 +9,7 @@ export default defineManifest({
   permissions: [
     'storage',
     'activeTab',
-    'scripting',
-    'aiLanguageModelOriginTrial'
+    'scripting'
   ],
   
   host_permissions: [
