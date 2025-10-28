@@ -177,28 +177,44 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       writer: false
     }
 
-    // Return default capabilities if window is not available (e.g., in service worker)
-    if (typeof window === 'undefined') {
-      return capabilities
-    }
+    // Try to detect APIs in both window and globalThis contexts
+    const context = typeof window !== 'undefined' ? window : globalThis
 
-    // Check Language Model API (global LanguageModel function)
-    if (typeof (globalThis as any).LanguageModel === 'function') {
+    // Check Language Model API (try multiple contexts)
+    if (typeof (context as any).LanguageModel === 'function') {
       try {
-        const status = await (globalThis as any).LanguageModel.availability()
+        const status = await (context as any).LanguageModel.availability()
         capabilities.languageModel = status === 'readily' || status === 'downloadable'
+        console.log('LanguageModel detected:', status)
       } catch (e) {
         console.log('Language Model API not available:', e)
       }
+    } else if (typeof (globalThis as any).LanguageModel !== 'undefined') {
+      try {
+        const status = await (globalThis as any).LanguageModel.availability()
+        capabilities.languageModel = status === 'readily' || status === 'downloadable'
+        console.log('LanguageModel detected (global):', status)
+      } catch (e) {
+        console.log('Global LanguageModel API not available:', e)
+      }
     }
 
-    // Check Summarizer API (global Summarizer function)
-    if (typeof (globalThis as any).Summarizer === 'function') {
+    // Check Summarizer API
+    if (typeof (context as any).Summarizer === 'function') {
+      try {
+        const status = await (context as any).Summarizer.availability()
+        capabilities.summarizer = status === 'readily' || status === 'downloadable'
+        console.log('Summarizer detected:', status)
+      } catch (e) {
+        console.log('Summarizer API not available:', e)
+      }
+    } else if (typeof (globalThis as any).Summarizer !== 'undefined') {
       try {
         const status = await (globalThis as any).Summarizer.availability()
         capabilities.summarizer = status === 'readily' || status === 'downloadable'
+        console.log('Summarizer detected (global):', status)
       } catch (e) {
-        console.log('Summarizer API not available:', e)
+        console.log('Global Summarizer API not available:', e)
       }
     }
 
@@ -214,13 +230,22 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       }
     }
 
-    // Check Writer API (global Writer function)
-    if (typeof (globalThis as any).Writer === 'function') {
+    // Check Writer API
+    if (typeof (context as any).Writer === 'function') {
+      try {
+        const status = await (context as any).Writer.availability()
+        capabilities.writer = status === 'readily' || status === 'downloadable'
+        console.log('Writer detected:', status)
+      } catch (e) {
+        console.log('Writer API not available:', e)
+      }
+    } else if (typeof (globalThis as any).Writer !== 'undefined') {
       try {
         const status = await (globalThis as any).Writer.availability()
         capabilities.writer = status === 'readily' || status === 'downloadable'
+        console.log('Writer detected (global):', status)
       } catch (e) {
-        console.log('Writer API not available:', e)
+        console.log('Global Writer API not available:', e)
       }
     }
 
@@ -246,8 +271,11 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     const capabilities = await checkAICapabilities()
     
     if (capabilities.languageModel) {
-      // Use global LanguageModel for text simplification
-      session = await (globalThis as any).LanguageModel.create({
+      // Use LanguageModel for text simplification
+      const context = typeof window !== 'undefined' ? window : globalThis
+      const LanguageModelAPI = (context as any).LanguageModel || (globalThis as any).LanguageModel
+      
+      session = await LanguageModelAPI.create({
         systemPrompt: buildSimplificationPrompt(settings.level),
         temperature: 0.7,
         topK: 3,
@@ -259,8 +287,9 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
       let summary = ''
       if (capabilities.summarizer) {
         try {
-          // Use global Summarizer for summary
-          summarizer = await (globalThis as any).Summarizer.create({
+          // Use Summarizer for summary
+          const SummarizerAPI = (context as any).Summarizer || (globalThis as any).Summarizer
+          summarizer = await SummarizerAPI.create({
             outputLanguage: 'en'
           })
           summary = await summarizer.summarize(simplified)
@@ -319,8 +348,11 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     const capabilities = await checkAICapabilities()
     
     if (capabilities.writer) {
-      // Use global Writer API for quiz generation
-      const session = await (globalThis as any).Writer.create({
+      // Use Writer API for quiz generation
+      const context = typeof window !== 'undefined' ? window : globalThis
+      const WriterAPI = (context as any).Writer || (globalThis as any).Writer
+      
+      const session = await WriterAPI.create({
         outputLanguage: 'en'
       })
 

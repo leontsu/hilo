@@ -2,8 +2,7 @@ import {
   simplifyTextAI, 
   simplifyCaptionsAI, 
   generateQuizAI, 
-  translateTextAI,
-  checkAICapabilities
+  translateTextAI
 } from '../lib/ai'
 import { getSettings, incrementSimplification, incrementQuiz, incrementTranslation } from '../lib/storage'
 import { 
@@ -264,11 +263,20 @@ async function handleTranslation(
 
 async function handleAICapabilityCheck(): Promise<MessageResponse> {
   try {
-    const capabilities = await checkAICapabilities()
+    // Service workers can't access Chrome AI APIs directly
+    // Return default capabilities and let content scripts detect actual availability
+    console.log('AI capability check requested from background script')
+    
+    const defaultCapabilities = {
+      languageModel: false,
+      summarizer: false,
+      translator: false,
+      writer: false
+    }
     
     return {
       success: true,
-      data: { capabilities }
+      data: { capabilities: defaultCapabilities }
     }
   } catch (error) {
     console.error('AI capability check error:', error)

@@ -133,6 +133,32 @@ declare global {
       canTranslate: (options: any) => Promise<string>
     }
   }
+  
+  // Global Chrome AI APIs
+  const LanguageModel: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Summarizer: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Writer: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Rewriter: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Proofreader: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
 }
 
 export type MessageRequest = 

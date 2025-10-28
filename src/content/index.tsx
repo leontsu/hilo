@@ -73,6 +73,66 @@ class HiloContentScript {
       console.error('Error checking AI capabilities:', error)
     }
   }
+  
+  private async checkAICapabilitiesDirect() {
+    try {
+      console.log('Content script checking AI capabilities directly...')
+      
+      const capabilities = {
+        languageModel: false,
+        summarizer: false,
+        translator: false,
+        writer: false
+      }
+      
+      // Check LanguageModel in content script context
+      if (typeof (window as any).LanguageModel === 'function') {
+        try {
+          const status = await (window as any).LanguageModel.availability()
+          capabilities.languageModel = status === 'readily' || status === 'downloadable'
+          console.log('LanguageModel status:', status)
+        } catch (e) {
+          console.log('LanguageModel check failed:', e)
+        }
+      } else if (typeof (globalThis as any).LanguageModel === 'function') {
+        try {
+          const status = await (globalThis as any).LanguageModel.availability()
+          capabilities.languageModel = status === 'readily' || status === 'downloadable'
+          console.log('LanguageModel status (globalThis):', status)
+        } catch (e) {
+          console.log('LanguageModel globalThis check failed:', e)
+        }
+      }
+      
+      // Check Summarizer
+      if (typeof (window as any).Summarizer === 'function') {
+        try {
+          const status = await (window as any).Summarizer.availability()
+          capabilities.summarizer = status === 'readily' || status === 'downloadable'
+          console.log('Summarizer status:', status)
+        } catch (e) {
+          console.log('Summarizer check failed:', e)
+        }
+      }
+      
+      // Check Writer
+      if (typeof (window as any).Writer === 'function') {
+        try {
+          const status = await (window as any).Writer.availability()
+          capabilities.writer = status === 'readily' || status === 'downloadable'
+          console.log('Writer status:', status)
+        } catch (e) {
+          console.log('Writer check failed:', e)
+        }
+      }
+      
+      console.log('Content script AI capabilities result:', capabilities)
+      return capabilities
+    } catch (error) {
+      console.error('Direct AI capability check failed:', error)
+      return { languageModel: false, summarizer: false, translator: false, writer: false }
+    }
+  }
 
   private createShadowContainer() {
     // Create container for Shadow DOM
@@ -201,11 +261,20 @@ class HiloContentScript {
     })
     
     // Listen for settings changes and page adjustment requests
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.type === 'SETTINGS_CHANGED') {
         this.loadSettings()
       } else if (message.type === 'ADJUST_PAGE') {
         this.adjustEntirePage(message.settings || this.settings)
+      } else if (message.type === 'CHECK_AI_CAPABILITIES_DIRECT') {
+        // Check AI capabilities in content script context
+        this.checkAICapabilitiesDirect().then((capabilities: any) => {
+          sendResponse({ capabilities })
+        }).catch((error: any) => {
+          console.error('Error checking AI capabilities in content script:', error)
+          sendResponse({ capabilities: this.aiCapabilities })
+        })
+        return true // Keep message channel open for async response
       }
     })
   }

@@ -41,8 +41,6 @@ const PopupApp: React.FC = () => {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [adjustingPage, setAdjustingPage] = useState(false)
-  const [pageAdjustError, setPageAdjustError] = useState<string | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -94,45 +92,6 @@ const PopupApp: React.FC = () => {
     }
   }
 
-  const adjustCurrentPage = async () => {
-    setAdjustingPage(true)
-    setPageAdjustError(null)
-    
-    try {
-      // Get the active tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      
-      if (!tab.id) {
-        throw new Error('No active tab found')
-      }
-
-      // Check if the tab URL is valid for content scripts
-      if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
-        throw new Error('Cannot adjust level on browser pages. Please navigate to a regular webpage.')
-      }
-
-      // Send message to content script to adjust the entire page
-      await chrome.tabs.sendMessage(tab.id, {
-        type: 'ADJUST_PAGE',
-        settings: settings
-      })
-
-      // Close popup after triggering adjustment
-      setTimeout(() => window.close(), 500)
-    } catch (error) {
-      console.error('Error adjusting page:', error)
-      setAdjustingPage(false)
-      setPageAdjustError(
-        error instanceof Error 
-          ? error.message 
-          : 'Failed to adjust page level. Make sure the content script is loaded and try refreshing the page.'
-      )
-      
-      // Clear error after 5 seconds
-      setTimeout(() => setPageAdjustError(null), 5000)
-    }
-  }
-
   const openOptionsPage = () => {
     chrome.runtime.openOptionsPage()
   }
@@ -140,33 +99,10 @@ const PopupApp: React.FC = () => {
   if (loading) {
     return (
       <div className="popup-container">
-        <header className="popup-header">
-          <div className="logo-section">
-            <div className="logo-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="logo-text">
-              <h1>Hilo</h1>
-              <p>Adaptive Translator</p>
-            </div>
-          </div>
-        </header>
-        <main className="popup-main">
-          <div className="skeleton-loader">
-            <div className="skeleton-box skeleton-toggle"></div>
-            <div className="skeleton-box skeleton-button"></div>
-            <div className="skeleton-box skeleton-select"></div>
-            <div className="skeleton-box skeleton-select"></div>
-            <div className="skeleton-box skeleton-grid">
-              <div className="skeleton-item"></div>
-              <div className="skeleton-item"></div>
-              <div className="skeleton-item"></div>
-              <div className="skeleton-item"></div>
-            </div>
-          </div>
-        </main>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading...</div>
+        </div>
       </div>
     )
   }
@@ -175,11 +111,7 @@ const PopupApp: React.FC = () => {
     <div className="popup-container">
       <header className="popup-header">
         <div className="logo-section">
-          <div className="logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          <div className="logo-icon">🔍</div>
           <div className="logo-text">
             <h1>Hilo</h1>
             <p>Adaptive Translator</p>
@@ -202,41 +134,6 @@ const PopupApp: React.FC = () => {
               <span className="toggle-status">{settings.enabled ? 'Active' : 'Inactive'}</span>
             </span>
           </label>
-        </div>
-
-        <div className="page-actions">
-          <div className="page-actions-header">
-            <h3>🌐 Page Actions</h3>
-          </div>
-          <button 
-            onClick={adjustCurrentPage}
-            className="adjust-page-button"
-            disabled={!settings.enabled || saving || adjustingPage}
-          >
-            {adjustingPage ? (
-              <>
-                <span className="button-icon loading">⏳</span>
-                <div className="button-content">
-                  <div className="button-title">Starting...</div>
-                  <div className="button-description">Adjusting page level</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="button-icon">→</span>
-                <div className="button-content">
-                  <div className="button-title">Adjust Entire Page</div>
-                  <div className="button-description">Change all text to {settings.level} level</div>
-                </div>
-              </>
-            )}
-          </button>
-          {pageAdjustError && (
-            <div className="page-adjust-error">
-              <span className="error-icon">⚠️</span>
-              <span className="error-text">{pageAdjustError}</span>
-            </div>
-          )}
         </div>
 
         <div className="setting-group">
@@ -274,73 +171,216 @@ const PopupApp: React.FC = () => {
           </select>
         </div>
 
-        <div className="capabilities-section">
-          <h3 className="section-title">System Status</h3>
-          <div className="capabilities-grid">
-            <div className={`capability-item ${aiCapabilities.languageModel ? 'active' : 'inactive'}`}>
-              <div className="capability-icon">{aiCapabilities.languageModel ? '●' : '○'}</div>
-              <div className="capability-label">Level Adjust</div>
+        <div className="ai-status">
+          <div className="ai-status-header">
+            <div className="ai-header-content">
+              <div className="ai-title-section">
+                <h3>🤖 AI Capabilities</h3>
+                <div className="ai-version-badge">Chrome Built-in AI</div>
+              </div>
+              <div className="ai-overall-status">
+                <div className="status-indicator">
+                  <div className={`status-ring ${Object.values(aiCapabilities).some(v => v) ? 'active' : 'inactive'}`}>
+                    <div className="status-fill" style={{
+                      '--fill-percentage': `${(Object.values(aiCapabilities).filter(v => v).length / Object.values(aiCapabilities).length) * 100}%`
+                    } as React.CSSProperties}></div>
+                  </div>
+                  <div className="status-label">
+                    <div className="status-count">{Object.values(aiCapabilities).filter(v => v).length}</div>
+                    <div className="status-total">/{Object.values(aiCapabilities).length}</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className={`capability-item ${aiCapabilities.writer ? 'active' : 'inactive'}`}>
-              <div className="capability-icon">{aiCapabilities.writer ? '●' : '○'}</div>
-              <div className="capability-label">Quiz</div>
+          </div>
+          
+          <div className="ai-capabilities-grid">
+            <div className={`ai-capability-card priority-high ${aiCapabilities.languageModel ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.languageModel ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.languageModel ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.languageModel && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar accuracy" title="Accuracy: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.languageModel ? '🧠' : '📚'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Text Simplification</div>
+                  <div className="capability-description">{aiCapabilities.languageModel ? 'Advanced AI processing with context understanding' : 'Basic text processing with predefined rules'}</div>
+                </div>
+              </div>
             </div>
-            <div className={`capability-item ${aiCapabilities.translator ? 'active' : 'inactive'}`}>
-              <div className="capability-icon">{aiCapabilities.translator ? '●' : '○'}</div>
-              <div className="capability-label">Translation</div>
+
+            <div className={`ai-capability-card priority-medium ${aiCapabilities.writer ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.writer ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.writer ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.writer && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar creativity" title="Creativity: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.writer ? '✨' : '📝'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Quiz Generation</div>
+                  <div className="capability-description">{aiCapabilities.writer ? 'AI-generated contextual questions and answers' : 'Template-based quiz creation'}</div>
+                </div>
+              </div>
             </div>
-            <div className={`capability-item ${aiCapabilities.summarizer ? 'active' : 'inactive'}`}>
-              <div className="capability-icon">{aiCapabilities.summarizer ? '●' : '○'}</div>
-              <div className="capability-label">Summary</div>
+
+            <div className={`ai-capability-card priority-medium ${aiCapabilities.translator ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.translator ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.translator ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.translator && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar fluency" title="Fluency: Native-like"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.translator ? '🌍' : '🌐'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Translation</div>
+                  <div className="capability-description">{aiCapabilities.translator ? 'Neural machine translation with cultural context' : 'Dictionary-based translation service'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`ai-capability-card priority-low ${aiCapabilities.summarizer ? 'ai-enabled' : 'fallback-mode'}`}>
+              <div className="capability-header">
+                <div className="capability-status-badge">
+                  <div className={`status-led ${aiCapabilities.summarizer ? 'led-active' : 'led-inactive'}`}></div>
+                  <span className="status-badge-text">{aiCapabilities.summarizer ? 'AI' : 'Basic'}</span>
+                </div>
+                <div className="capability-performance">
+                  {aiCapabilities.summarizer && (
+                    <div className="performance-bars">
+                      <div className="perf-bar speed" title="Speed: Fast"></div>
+                      <div className="perf-bar quality" title="Quality: High"></div>
+                      <div className="perf-bar comprehension" title="Comprehension: Excellent"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="capability-content">
+                <div className="capability-icon-large">{aiCapabilities.summarizer ? '📋' : '📄'}</div>
+                <div className="capability-details">
+                  <div className="capability-name">Summarization</div>
+                  <div className="capability-description">{aiCapabilities.summarizer ? 'Intelligent content summarization with key insights' : 'Basic text extraction and shortening'}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="stats-section">
-          <h3 className="section-title">Usage</h3>
-          <div className="stats-grid">
-            <div className="stat-box">
-              <div className="stat-value">{statistics.todaySimplifications}</div>
-              <div className="stat-label">Today</div>
+        <div className="statistics-section">
+          <div className="statistics-header">
+            <h3>📊 Usage Statistics</h3>
+          </div>
+          <div className="statistics-grid">
+            <div className="stat-card today">
+              <div className="stat-header">
+                <div className="stat-title">Today</div>
+                <div className="stat-icon">🌟</div>
+              </div>
+              <div className="stat-metrics">
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.todaySimplifications}</div>
+                  <div className="metric-label">Simplified</div>
+                </div>
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.todayWords}</div>
+                  <div className="metric-label">Words</div>
+                </div>
+              </div>
             </div>
-            <div className="stat-box">
-              <div className="stat-value">{statistics.totalSimplifications}</div>
-              <div className="stat-label">Total</div>
+            <div className="stat-card total">
+              <div className="stat-header">
+                <div className="stat-title">All Time</div>
+                <div className="stat-icon">🏆</div>
+              </div>
+              <div className="stat-metrics">
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.totalSimplifications}</div>
+                  <div className="metric-label">Simplified</div>
+                </div>
+                <div className="stat-metric">
+                  <div className="metric-value">{statistics.totalWords}</div>
+                  <div className="metric-label">Words</div>
+                </div>
+              </div>
             </div>
-            <div className="stat-box">
-              <div className="stat-value">{statistics.todayWords}</div>
-              <div className="stat-label">Words</div>
+          </div>
+          <div className="activity-summary">
+            <div className="activity-item">
+              <span className="activity-icon">🧠</span>
+              <span className="activity-text">{statistics.todayQuizzes} quizzes today</span>
             </div>
-            <div className="stat-box">
-              <div className="stat-value">{statistics.todayQuizzes + statistics.todayTranslations}</div>
-              <div className="stat-label">Actions</div>
+            <div className="activity-item">
+              <span className="activity-icon">🌐</span>
+              <span className="activity-text">{statistics.todayTranslations} translations today</span>
             </div>
           </div>
         </div>
 
-        <div className="guide-section">
-          <h3 className="section-title">How to Use</h3>
-          <div className="guide-steps">
-            <div className="guide-step">
-              <span className="step-number">1</span>
-              <span className="step-text">Highlight text on any page</span>
+        <div className="usage-info">
+          <div className="usage-header">
+            <h3>📖 Quick Guide</h3>
+          </div>
+          <div className="usage-steps">
+            <div className="usage-step">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <div className="step-title">Select Text</div>
+                <div className="step-description">Highlight 8+ characters on any webpage</div>
+              </div>
             </div>
-            <div className="guide-step">
-              <span className="step-number">2</span>
-              <span className="step-text">Click Adjust Level, Quiz, or Translate</span>
+            <div className="usage-step">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <div className="step-title">Choose Action</div>
+                <div className="step-description">Simplify, Quiz, or Translate the selected text</div>
+              </div>
             </div>
-            <div className="guide-step">
-              <span className="step-number">3</span>
-              <span className="step-text">View adjusted text with toggle</span>
+            <div className="usage-step">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <div className="step-title">YouTube Support</div>
+                <div className="step-description">Use "EASY" button for simplified captions</div>
+              </div>
             </div>
           </div>
         </div>
-
       </main>
 
       <footer className="popup-footer">
-        <button onClick={openOptionsPage} className="footer-link">
-          Advanced Settings →
+        <button onClick={openOptionsPage} className="settings-button">
+          <span className="settings-icon">⚙️</span>
+          Advanced Settings
         </button>
       </footer>
     </div>

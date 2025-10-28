@@ -56,7 +56,12 @@ export default defineManifest({
   
   web_accessible_resources: [
     {
-      resources: ['src/content/styles.css'],
+      resources: [
+        'src/content/styles.css',
+        'assets/*.js',
+        'assets/*.css',
+        'src/ui/*.html'
+      ],
       matches: ['<all_urls>']
     }
   ]
