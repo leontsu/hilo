@@ -78,7 +78,10 @@ const PopupApp: React.FC = () => {
   if (loading) {
     return (
       <div className="popup-container">
-        <div className="loading">Loading...</div>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading...</div>
+        </div>
       </div>
     )
   }
@@ -86,12 +89,17 @@ const PopupApp: React.FC = () => {
   return (
     <div className="popup-container">
       <header className="popup-header">
-        <h1>LevelLens</h1>
-        <p>Adaptive Translator</p>
+        <div className="logo-section">
+          <div className="logo-icon">🔍</div>
+          <div className="logo-text">
+            <h1>LevelLens</h1>
+            <p>Adaptive Translator</p>
+          </div>
+        </div>
       </header>
 
       <main className="popup-main">
-        <div className="setting-group">
+        <div className="setting-group main-toggle">
           <label className="setting-label">
             <input
               type="checkbox"
@@ -100,7 +108,10 @@ const PopupApp: React.FC = () => {
               disabled={saving}
             />
             <span className="checkmark"></span>
-            Enable LevelLens
+            <span className="toggle-text">
+              <span className="toggle-title">Enable LevelLens</span>
+              <span className="toggle-status">{settings.enabled ? 'Active' : 'Inactive'}</span>
+            </span>
           </label>
         </div>
 
@@ -140,37 +151,80 @@ const PopupApp: React.FC = () => {
         </div>
 
         <div className="ai-status">
-          <h3>AI Capabilities:</h3>
+          <div className="ai-status-header">
+            <h3>🤖 AI Capabilities</h3>
+            <div className="ai-status-indicator">
+              <div className={`status-dot ${Object.values(aiCapabilities).some(v => v) ? 'active' : 'inactive'}`}></div>
+              <span className="status-text">
+                {Object.values(aiCapabilities).filter(v => v).length}/{Object.values(aiCapabilities).length} Available
+              </span>
+            </div>
+          </div>
           <div className="ai-capabilities">
             <div className={`ai-capability ${aiCapabilities.languageModel ? 'available' : 'unavailable'}`}>
-              {aiCapabilities.languageModel ? '🤖' : '📚'} Simplification: {aiCapabilities.languageModel ? 'AI' : 'Local'}
+              <div className="capability-icon">{aiCapabilities.languageModel ? '🤖' : '📚'}</div>
+              <div className="capability-info">
+                <div className="capability-name">Simplification</div>
+                <div className="capability-type">{aiCapabilities.languageModel ? 'AI-Powered' : 'Basic'}</div>
+              </div>
             </div>
             <div className={`ai-capability ${aiCapabilities.writer ? 'available' : 'unavailable'}`}>
-              {aiCapabilities.writer ? '🤖' : '📝'} Quiz Generation: {aiCapabilities.writer ? 'AI' : 'Local'}
+              <div className="capability-icon">{aiCapabilities.writer ? '🤖' : '📝'}</div>
+              <div className="capability-info">
+                <div className="capability-name">Quiz Generation</div>
+                <div className="capability-type">{aiCapabilities.writer ? 'AI-Powered' : 'Basic'}</div>
+              </div>
             </div>
             <div className={`ai-capability ${aiCapabilities.translator ? 'available' : 'unavailable'}`}>
-              {aiCapabilities.translator ? '🤖' : '🌐'} Translation: {aiCapabilities.translator ? 'AI' : 'Local'}
+              <div className="capability-icon">{aiCapabilities.translator ? '🤖' : '🌐'}</div>
+              <div className="capability-info">
+                <div className="capability-name">Translation</div>
+                <div className="capability-type">{aiCapabilities.translator ? 'AI-Powered' : 'Basic'}</div>
+              </div>
             </div>
             <div className={`ai-capability ${aiCapabilities.summarizer ? 'available' : 'unavailable'}`}>
-              {aiCapabilities.summarizer ? '🤖' : '📄'} Summarization: {aiCapabilities.summarizer ? 'AI' : 'Local'}
+              <div className="capability-icon">{aiCapabilities.summarizer ? '🤖' : '📄'}</div>
+              <div className="capability-info">
+                <div className="capability-name">Summarization</div>
+                <div className="capability-type">{aiCapabilities.summarizer ? 'AI-Powered' : 'Basic'}</div>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="usage-info">
-          <h3>How to use:</h3>
-          <ul>
-            <li>Select text on any webpage (8+ characters)</li>
-            <li>Click "Simplify" for easier version {aiCapabilities.languageModel && '(AI-powered)'}</li>
-            <li>Click "Quiz" to test comprehension {aiCapabilities.writer && '(AI-generated)'}</li>
-            <li>Click "Translate" for language support {aiCapabilities.translator && '(AI-powered)'}</li>
-            <li>For YouTube: Enable "EASY" button for captions</li>
-          </ul>
+          <div className="usage-header">
+            <h3>📖 Quick Guide</h3>
+          </div>
+          <div className="usage-steps">
+            <div className="usage-step">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <div className="step-title">Select Text</div>
+                <div className="step-description">Highlight 8+ characters on any webpage</div>
+              </div>
+            </div>
+            <div className="usage-step">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <div className="step-title">Choose Action</div>
+                <div className="step-description">Simplify, Quiz, or Translate the selected text</div>
+              </div>
+            </div>
+            <div className="usage-step">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <div className="step-title">YouTube Support</div>
+                <div className="step-description">Use "EASY" button for simplified captions</div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
       <footer className="popup-footer">
-        <button onClick={openOptionsPage} className="link-button">
+        <button onClick={openOptionsPage} className="settings-button">
+          <span className="settings-icon">⚙️</span>
           Advanced Settings
         </button>
       </footer>
