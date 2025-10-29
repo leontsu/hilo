@@ -33,7 +33,7 @@ function getChromeVersion(): string {
 
 // Enhanced Error Message Generator
 function getAIErrorMessage(errorType: string, chromeVersion: string): string {
-  const baseMessages = {
+  const baseMessages: Record<string, string> = {
     'api-unavailable': `Chrome's built-in AI is not available. This requires Chrome Canary 128+ with experimental AI features enabled.`,
     'activation-required': `User interaction required. Please click or interact with the page first before using AI features.`,
     'download-required': `AI model needs to be downloaded. This may take a few minutes on first use.`,
@@ -58,7 +58,17 @@ function getAIErrorMessage(errorType: string, chromeVersion: string): string {
 function getAIAPIAccess(): AIAPIAccess {
   // Try multiple access methods in order of preference
   
-  // Method 1: self.ai (working implementation)
+  // Method 1: globalThis.ai (for service workers)
+  if (typeof (globalThis as any).ai !== 'undefined') {
+    console.log('[AI] Found globalThis.ai interface')
+    return {
+      languageModel: (globalThis as any).ai.languageModel,
+      summarizer: (globalThis as any).ai.summarizer,
+      writer: (globalThis as any).ai.writer
+    }
+  }
+  
+  // Method 2: self.ai (working implementation in content scripts)
   if (typeof self !== 'undefined' && (self as any).ai) {
     console.log('[AI] Found self.ai interface')
     return {
@@ -68,7 +78,7 @@ function getAIAPIAccess(): AIAPIAccess {
     }
   }
   
-  // Method 2: window.ai (some documentation references)
+  // Method 3: window.ai (some documentation references)
   if (typeof window !== 'undefined' && (window as any).ai) {
     console.log('[AI] Found window.ai interface')
     return {
@@ -78,7 +88,7 @@ function getAIAPIAccess(): AIAPIAccess {
     }
   }
   
-  // Method 3: Global objects (official documentation)
+  // Method 4: Global objects (official documentation)
   const globalAccess: AIAPIAccess = {}
   if (typeof (globalThis as any).LanguageModel !== 'undefined') {
     globalAccess.languageModel = (globalThis as any).LanguageModel
@@ -104,10 +114,6 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
   try {
     console.log('[AI] Starting comprehensive AI capability check...')
     
-    // Check Chrome version for better error messages
-    const chromeVersion = getChromeVersion()
-    console.log('[AI] Chrome version:', chromeVersion)
-    
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
@@ -115,11 +121,90 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       writer: false
     }
 
-    // Return default capabilities if running in service worker
-    if (typeof window === 'undefined' && typeof self === 'undefined') {
-      console.log('[AI] No window/self context available, returning default capabilities')
+    // Check if running in service worker context
+    if (typeof window === 'undefined' && typeof document === 'undefined') {
+      console.log('[AI] Running in service worker context, checking global APIs directly...')
+      
+      // In service worker context, check for global APIs directly
+      try {
+        if (typeof (globalThis as any).ai !== 'undefined') {
+          console.log('[AI] Found globalThis.ai in service worker')
+          const ai = (globalThis as any).ai
+          
+          if (ai.languageModel) {
+            try {
+              const availability = await ai.languageModel.capabilities()
+              capabilities.languageModel = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker LanguageModel:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker LanguageModel check failed:', e)
+            }
+          }
+          
+          if (ai.summarizer) {
+            try {
+              const availability = await ai.summarizer.capabilities()
+              capabilities.summarizer = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker Summarizer:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker Summarizer check failed:', e)
+            }
+          }
+          
+          if (ai.writer) {
+            try {
+              const availability = await ai.writer.capabilities()
+              capabilities.writer = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker Writer:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker Writer check failed:', e)
+            }
+          }
+        } else {
+          console.log('[AI] No globalThis.ai found in service worker, trying global objects...')
+          
+          // Try global objects
+          if (typeof (globalThis as any).LanguageModel !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).LanguageModel.availability()
+              capabilities.languageModel = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global LanguageModel:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global LanguageModel check failed:', e)
+            }
+          }
+          
+          if (typeof (globalThis as any).Summarizer !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).Summarizer.availability()
+              capabilities.summarizer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global Summarizer:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global Summarizer check failed:', e)
+            }
+          }
+          
+          if (typeof (globalThis as any).Writer !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).Writer.availability()
+              capabilities.writer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global Writer:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global Writer check failed:', e)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[AI] Service worker API check failed:', error)
+      }
+      
+      console.log('[AI] Service worker final capabilities:', capabilities)
       return capabilities
     }
+
+    // Check Chrome version for better error messages (only in regular context)
+    const chromeVersion = getChromeVersion()
+    console.log('[AI] Chrome version:', chromeVersion)
 
     // Check user activation requirement
     if (typeof navigator !== 'undefined' && navigator.userActivation) {
@@ -147,7 +232,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         }
         
         console.log('[AI] LanguageModel availability:', availability)
-        capabilities.languageModel = availability === 'readily' || availability === 'after-download'
+        capabilities.languageModel = availability === 'readily' || availability === 'after-download' || availability === 'available'
         console.log('[AI] LanguageModel ready:', capabilities.languageModel)
       } catch (e) {
         console.log('[AI] LanguageModel check failed:', e)
@@ -169,7 +254,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         }
         
         console.log('[AI] Summarizer availability:', availability)
-        capabilities.summarizer = availability === 'readily' || availability === 'after-download'
+        capabilities.summarizer = availability === 'readily' || availability === 'after-download' || availability === 'available'
         console.log('[AI] Summarizer ready:', capabilities.summarizer)
       } catch (e) {
         console.log('[AI] Summarizer check failed:', e)
@@ -191,7 +276,7 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
         }
         
         console.log('[AI] Writer availability:', availability)
-        capabilities.writer = availability === 'readily' || availability === 'after-download'
+        capabilities.writer = availability === 'readily' || availability === 'after-download' || availability === 'available'
         console.log('[AI] Writer ready:', capabilities.writer)
       } catch (e) {
         console.log('[AI] Writer check failed:', e)
@@ -280,7 +365,8 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     // Use unified API wrapper for text simplification
     session = await createLanguageModelSession({
       initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
-      temperature: 0.7
+      temperature: 0.7,
+      topK: 40
     })
     console.log('[AI] Session created successfully')
 
@@ -448,7 +534,8 @@ export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSet
     console.log('[AI] Creating LanguageModel session for captions...')
     session = await createLanguageModelSession({
       initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
-      temperature: 0.7
+      temperature: 0.7,
+      topK: 40
     })
     console.log('[AI] Caption session created')
 

@@ -976,47 +976,6 @@ class HiloContentScript {
     this.autoRemoveNotification(notification, 7000)
   }
 
-  private showLoadingIndicator(x: number, y: number, message: string) {
-    const loader = document.createElement('div')
-    loader.id = 'levellens-loading-indicator'
-    loader.style.cssText = `
-      position: fixed;
-      left: ${Math.min(x, window.innerWidth - 200)}px;
-      top: ${Math.min(y + 60, window.innerHeight - 100)}px;
-      background: rgba(255, 255, 255, 0.98);
-      border: 2px solid #007bff;
-      border-radius: 12px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 20px rgba(0, 123, 255, 0.2);
-      z-index: 2147483646;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      backdrop-filter: blur(10px);
-    `
-    
-    loader.innerHTML = `
-      <div style="
-        width: 20px;
-        height: 20px;
-        border: 3px solid #e5e7eb;
-        border-top: 3px solid #007bff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      "></div>
-      <div style="font-weight: 500; color: #333;">${message}</div>
-      <style>
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      </style>
-    `
-    
-    document.body.appendChild(loader)
-  }
 
   private showEnhancedLoadingIndicator(x: number, y: number, title: string, subtitle: string) {
     const loader = document.createElement('div')
