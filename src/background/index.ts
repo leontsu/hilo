@@ -17,8 +17,7 @@ import type {
   MessageResponse, 
   SimplificationRequest, 
   CaptionSimplificationRequest,
-  QuizRequest,
-  PageAdjustmentRequest
+  QuizRequest
 } from '../types'
 
 // Handle installation
@@ -91,7 +90,8 @@ async function handleMessage(
         return await handleAICapabilityCheck()
       
       case 'ADJUST_PAGE':
-        return await handlePageAdjustment(request as PageAdjustmentRequest)
+        // Page adjustments are handled directly by content script
+        return { success: true, data: { message: 'Page adjustment request acknowledged' } }
       
       default:
         return {
@@ -266,30 +266,6 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
   }
 }
 
-async function handlePageAdjustment(
-  request: PageAdjustmentRequest
-): Promise<MessageResponse> {
-  try {
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // For page adjustment, we just acknowledge the request
-    // The actual work is done by the content script
-    console.log('Page adjustment requested with level:', settings.level)
-    
-    return {
-      success: true,
-      data: { message: 'Page adjustment initiated', settings }
-    }
-  } catch (error) {
-    console.error('Page adjustment error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Page adjustment failed'
-    }
-  }
-}
 
 // Handle storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, namespace) => {

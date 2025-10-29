@@ -104,17 +104,79 @@ Water is essential for all living things. Plants need water to make food through
     </div>
 
     <script>
+        // Comprehensive API Detection (matching extension logic)
+        function getAIAPIAccess() {
+            // Method 1: self.ai (working implementation)
+            if (typeof self !== 'undefined' && self.ai) {
+                console.log('[Test] Found self.ai interface');
+                return {
+                    type: 'self.ai',
+                    languageModel: self.ai.languageModel,
+                    summarizer: self.ai.summarizer,
+                    writer: self.ai.writer
+                };
+            }
+            
+            // Method 2: window.ai (some documentation references)
+            if (typeof window !== 'undefined' && window.ai) {
+                console.log('[Test] Found window.ai interface');
+                return {
+                    type: 'window.ai',
+                    languageModel: window.ai.languageModel,
+                    summarizer: window.ai.summarizer,
+                    writer: window.ai.writer
+                };
+            }
+            
+            // Method 3: Global objects (official documentation)
+            const globalAccess = {
+                type: 'global'
+            };
+            if (typeof LanguageModel !== 'undefined') {
+                globalAccess.languageModel = LanguageModel;
+            }
+            if (typeof Summarizer !== 'undefined') {
+                globalAccess.summarizer = Summarizer;
+            }
+            if (typeof Writer !== 'undefined') {
+                globalAccess.writer = Writer;
+            }
+            
+            if (Object.keys(globalAccess).length > 1) {
+                console.log('[Test] Found global AI objects:', Object.keys(globalAccess));
+                return globalAccess;
+            }
+            
+            console.log('[Test] No AI APIs found');
+            return { type: 'none' };
+        }
+
         // Check API availability
         async function checkAPIs() {
-            console.log('Checking Chrome AI APIs...');
+            console.log('Checking Chrome AI APIs with comprehensive detection...');
             
-            // Check Prompt API
-            if (window.ai && window.ai.languageModel) {
+            const apiAccess = getAIAPIAccess();
+            console.log('[Test] API Access Method:', apiAccess.type);
+            
+            // Check Prompt API (LanguageModel)
+            console.log('[Test] Checking LanguageModel...');
+            if (apiAccess.languageModel) {
                 try {
-                    const capabilities = await window.ai.languageModel.capabilities();
-                    document.getElementById('prompt-status').textContent = capabilities.available || 'Available';
-                    document.getElementById('prompt-status').className = 'status available';
+                    let availability;
+                    if (typeof apiAccess.languageModel.capabilities === 'function') {
+                        // For self.ai/window.ai interface
+                        const caps = await apiAccess.languageModel.capabilities();
+                        availability = caps.available;
+                    } else if (typeof apiAccess.languageModel.availability === 'function') {
+                        // For global object interface
+                        availability = await apiAccess.languageModel.availability();
+                    }
+                    
+                    console.log('[Test] LanguageModel availability:', availability);
+                    document.getElementById('prompt-status').textContent = `${availability} (${apiAccess.type})`;
+                    document.getElementById('prompt-status').className = availability === 'readily' ? 'status available' : 'status unavailable';
                 } catch (e) {
+                    console.error('[Test] LanguageModel check failed:', e);
                     document.getElementById('prompt-status').textContent = 'Error: ' + e.message;
                     document.getElementById('prompt-status').className = 'status unavailable';
                 }
@@ -124,12 +186,22 @@ Water is essential for all living things. Plants need water to make food through
             }
 
             // Check Summarizer API
-            if (window.ai && window.ai.summarizer) {
+            console.log('[Test] Checking Summarizer...');
+            if (apiAccess.summarizer) {
                 try {
-                    const capabilities = await window.ai.summarizer.capabilities();
-                    document.getElementById('summarizer-status').textContent = capabilities.available || 'Available';
-                    document.getElementById('summarizer-status').className = 'status available';
+                    let availability;
+                    if (typeof apiAccess.summarizer.capabilities === 'function') {
+                        const caps = await apiAccess.summarizer.capabilities();
+                        availability = caps.available;
+                    } else if (typeof apiAccess.summarizer.availability === 'function') {
+                        availability = await apiAccess.summarizer.availability();
+                    }
+                    
+                    console.log('[Test] Summarizer availability:', availability);
+                    document.getElementById('summarizer-status').textContent = `${availability} (${apiAccess.type})`;
+                    document.getElementById('summarizer-status').className = availability === 'readily' ? 'status available' : 'status unavailable';
                 } catch (e) {
+                    console.error('[Test] Summarizer check failed:', e);
                     document.getElementById('summarizer-status').textContent = 'Error: ' + e.message;
                     document.getElementById('summarizer-status').className = 'status unavailable';
                 }
@@ -139,12 +211,22 @@ Water is essential for all living things. Plants need water to make food through
             }
 
             // Check Writer API
-            if (window.ai && window.ai.writer) {
+            console.log('[Test] Checking Writer...');
+            if (apiAccess.writer) {
                 try {
-                    const capabilities = await window.ai.writer.capabilities();
-                    document.getElementById('writer-status').textContent = capabilities.available || 'Available';
-                    document.getElementById('writer-status').className = 'status available';
+                    let availability;
+                    if (typeof apiAccess.writer.capabilities === 'function') {
+                        const caps = await apiAccess.writer.capabilities();
+                        availability = caps.available;
+                    } else if (typeof apiAccess.writer.availability === 'function') {
+                        availability = await apiAccess.writer.availability();
+                    }
+                    
+                    console.log('[Test] Writer availability:', availability);
+                    document.getElementById('writer-status').textContent = `${availability} (${apiAccess.type})`;
+                    document.getElementById('writer-status').className = availability === 'readily' ? 'status available' : 'status unavailable';
                 } catch (e) {
+                    console.error('[Test] Writer check failed:', e);
                     document.getElementById('writer-status').textContent = 'Error: ' + e.message;
                     document.getElementById('writer-status').className = 'status unavailable';
                 }
@@ -177,16 +259,17 @@ Water is essential for all living things. Plants need water to make food through
             const input = document.getElementById('prompt-input').value;
             const resultDiv = document.getElementById('prompt-result');
             
-            if (!window.ai || !window.ai.languageModel) {
-                resultDiv.innerHTML = '<div class="result error">Prompt API not available</div>';
+            const apiAccess = getAIAPIAccess();
+            if (!apiAccess.languageModel) {
+                resultDiv.innerHTML = '<div class="result error">LanguageModel API not available</div>';
                 return;
             }
 
             try {
                 resultDiv.innerHTML = '<div class="result">Processing...</div>';
                 
-                const session = await window.ai.languageModel.create({
-                    systemPrompt: 'You are a helpful language learning assistant that simplifies text for A1 level English learners.',
+                const session = await apiAccess.languageModel.create({
+                    initialPrompts: [{ role: 'system', content: 'You are a helpful language learning assistant that simplifies text for A1 level English learners.' }],
                     temperature: 0.7
                 });
 
@@ -195,7 +278,7 @@ Water is essential for all living things. Plants need water to make food through
                 
                 session.destroy();
                 
-                resultDiv.innerHTML = `<div class="result"><strong>Simplified Text:</strong>\n${result}</div>`;
+                resultDiv.innerHTML = `<div class="result"><strong>Simplified Text (${apiAccess.type}):</strong>\n${result}</div>`;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
             }
@@ -206,7 +289,8 @@ Water is essential for all living things. Plants need water to make food through
             const input = document.getElementById('summarizer-input').value;
             const resultDiv = document.getElementById('summarizer-result');
             
-            if (!window.ai || !window.ai.summarizer) {
+            const apiAccess = getAIAPIAccess();
+            if (!apiAccess.summarizer) {
                 resultDiv.innerHTML = '<div class="result error">Summarizer API not available</div>';
                 return;
             }
@@ -214,7 +298,7 @@ Water is essential for all living things. Plants need water to make food through
             try {
                 resultDiv.innerHTML = '<div class="result">Processing...</div>';
                 
-                const summarizer = await window.ai.summarizer.create({
+                const summarizer = await apiAccess.summarizer.create({
                     type: 'tl;dr',
                     format: 'plain-text',
                     length: 'short'
@@ -223,7 +307,7 @@ Water is essential for all living things. Plants need water to make food through
                 const result = await summarizer.summarize(input);
                 summarizer.destroy();
                 
-                resultDiv.innerHTML = `<div class="result"><strong>Summary:</strong>\n${result}</div>`;
+                resultDiv.innerHTML = `<div class="result"><strong>Summary (${apiAccess.type}):</strong>\n${result}</div>`;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
             }
@@ -234,7 +318,8 @@ Water is essential for all living things. Plants need water to make food through
             const input = document.getElementById('writer-input').value;
             const resultDiv = document.getElementById('writer-result');
             
-            if (!window.ai || !window.ai.writer) {
+            const apiAccess = getAIAPIAccess();
+            if (!apiAccess.writer) {
                 resultDiv.innerHTML = '<div class="result error">Writer API not available</div>';
                 return;
             }
@@ -242,16 +327,16 @@ Water is essential for all living things. Plants need water to make food through
             try {
                 resultDiv.innerHTML = '<div class="result">Processing...</div>';
                 
-                const writer = await window.ai.writer.create({
+                const writer = await apiAccess.writer.create({
                     format: 'plain-text',
-                    tone: 'educational'
+                    tone: 'formal'
                 });
 
                 const prompt = `Generate 2 simple quiz questions about this text for English learners:\n\n"${input}"\n\nFormat each question with multiple choice answers A, B, C, D and mark the correct answer.`;
                 const result = await writer.write(prompt);
                 writer.destroy();
                 
-                resultDiv.innerHTML = `<div class="result"><strong>Generated Quiz:</strong>\n${result}</div>`;
+                resultDiv.innerHTML = `<div class="result"><strong>Generated Quiz (${apiAccess.type}):</strong>\n${result}</div>`;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
             }

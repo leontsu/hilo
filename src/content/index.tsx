@@ -183,6 +183,17 @@ class HiloContentScript {
         border-top: 1px solid #eee;
         padding-top: 8px;
       }
+      
+      @keyframes slideInRight {
+        0% {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
     `
     this.shadowRoot.appendChild(style)
     
@@ -292,10 +303,20 @@ class HiloContentScript {
 
   private async handleSimplify(selectedText: string, x: number, y: number) {
     console.log('Hilo: handleSimplify called with:', { selectedText, x, y, settings: this.settings })
-    alert('Button clicked! Check console for details.')
     
-    // Show loading indicator
-    this.showLoadingIndicator(x, y, 'Adjusting level...')
+    // Check AI capabilities first
+    if (!this.aiCapabilities.languageModel) {
+      console.log('Hilo: AI Language Model not available, showing enhanced error')
+      this.showEnhancedErrorNotification(
+        'AI Language Model Required',
+        'Chrome\'s built-in AI Language Model is required for text adjustment.',
+        'api-unavailable'
+      )
+      return
+    }
+    
+    // Show loading indicator with animation
+    this.showEnhancedLoadingIndicator(x, y, 'Adjusting text level...', 'AI is processing your text')
     
     try {
       console.log('Hilo: Sending SIMPLIFY_TEXT message to background...')
@@ -313,19 +334,24 @@ class HiloContentScript {
 
       if (response.success) {
         this.showSimplificationOverlay(response.data, x, y)
+        // Show quick success feedback
+        this.showQuickSuccessIndicator(x, y)
       } else {
         console.error('Level adjustment failed:', response.error)
-        this.showErrorNotification(
-          'Adjustment Failed',
-          response.error || 'Unable to adjust the selected text. Please try again.'
+        // Use enhanced error display for better user guidance
+        this.showEnhancedErrorNotification(
+          'Text Adjustment Failed',
+          response.error || 'Unable to adjust the selected text. Please try again.',
+          this.detectErrorType(response.error)
         )
       }
     } catch (error) {
       this.hideLoadingIndicator()
       console.error('Error during level adjustment:', error)
-      this.showErrorNotification(
+      this.showEnhancedErrorNotification(
         'Connection Error',
-        'Could not connect to the adjustment service. Please check your connection and try again.'
+        'Could not connect to the AI service. Please check your connection and try again.',
+        'connection-error'
       )
     }
     
@@ -333,8 +359,19 @@ class HiloContentScript {
   }
 
   private async handleQuiz(selectedText: string, x: number, y: number) {
-    // Show loading indicator
-    this.showLoadingIndicator(x, y, 'Generating quiz...')
+    // Check AI capabilities first
+    if (!this.aiCapabilities.writer) {
+      console.log('Hilo: AI Writer not available, showing enhanced error')
+      this.showEnhancedErrorNotification(
+        'AI Writer Required',
+        'Chrome\'s built-in AI Writer is required for quiz generation.',
+        'api-unavailable'
+      )
+      return
+    }
+    
+    // Show enhanced loading indicator
+    this.showEnhancedLoadingIndicator(x, y, 'Generating quiz questions...', 'AI is analyzing your text to create questions')
     
     try {
       // Send quiz generation request to background
@@ -348,19 +385,23 @@ class HiloContentScript {
 
       if (response.success) {
         this.showQuizOverlay(response.data, selectedText, x, y)
+        // Show quick success feedback
+        this.showQuickSuccessIndicator(x, y)
       } else {
         console.error('Quiz generation failed:', response.error)
-        this.showErrorNotification(
+        this.showEnhancedErrorNotification(
           'Quiz Generation Failed',
-          response.error || 'Unable to generate quiz questions. Please try again.'
+          response.error || 'Unable to generate quiz questions. Please try again.',
+          this.detectErrorType(response.error)
         )
       }
     } catch (error) {
       this.hideLoadingIndicator()
       console.error('Error during quiz generation:', error)
-      this.showErrorNotification(
+      this.showEnhancedErrorNotification(
         'Connection Error',
-        'Could not connect to the quiz service. Please check your connection and try again.'
+        'Could not connect to the AI service. Please check your connection and try again.',
+        'connection-error'
       )
     }
     
@@ -536,6 +577,20 @@ class HiloContentScript {
     
     try {
       console.log('Starting page level adjustment...')
+      console.log('DEBUG: This is the modified version with AI capability check!')
+      
+      // Check AI capabilities first
+      console.log('Hilo: Checking AI capabilities before page adjustment:', this.aiCapabilities)
+      if (!this.aiCapabilities.languageModel) {
+        console.log('Hilo: AI Language Model not available, stopping page adjustment')
+        this.showEnhancedErrorNotification(
+          'AI Language Model Required',
+          'Chrome\'s built-in AI Language Model is required for page adjustment.',
+          'api-unavailable'
+        )
+        return
+      }
+      console.log('Hilo: AI capabilities OK, proceeding with page adjustment')
       
       // Clear any existing overlays
       this.handleClear()
@@ -608,9 +663,10 @@ class HiloContentScript {
       
       // Show appropriate notification based on results
       if (successCount === 0) {
-        this.showErrorNotification(
-          'Adjustment Failed',
-          'Could not adjust any text on this page. Please try again or check your connection.'
+        this.showEnhancedErrorNotification(
+          'Page Adjustment Failed',
+          'Could not adjust any text on this page. Please try again or check your connection.',
+          'connection-error'
         )
       } else if (failCount > 0) {
         this.showWarningNotification(
@@ -623,9 +679,10 @@ class HiloContentScript {
     } catch (error) {
       console.error('Error during page adjustment:', error)
       this.hidePageAdjustmentProgress()
-      this.showErrorNotification(
-        'Adjustment Error',
-        error instanceof Error ? error.message : 'An unexpected error occurred during page adjustment.'
+      this.showEnhancedErrorNotification(
+        'Page Adjustment Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred during page adjustment.',
+        this.detectErrorType(error instanceof Error ? error.message : '')
       )
     }
   }
@@ -959,6 +1016,176 @@ class HiloContentScript {
     `
     
     document.body.appendChild(loader)
+  }
+
+  private showEnhancedLoadingIndicator(x: number, y: number, title: string, subtitle: string) {
+    const loader = document.createElement('div')
+    loader.id = 'levellens-loading-indicator'
+    loader.style.cssText = `
+      position: fixed;
+      left: ${Math.min(x, window.innerWidth - 280)}px;
+      top: ${Math.min(y + 60, window.innerHeight - 120)}px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 2px solid #007bff;
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 32px rgba(0, 123, 255, 0.15);
+      z-index: 2147483646;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      backdrop-filter: blur(20px);
+      animation: fadeInScale 0.3s ease;
+    `
+    
+    loader.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="
+          width: 24px;
+          height: 24px;
+          border: 3px solid #e5e7eb;
+          border-top: 3px solid #007bff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        "></div>
+        <div>
+          <div style="font-weight: 600; color: #333; font-size: 14px; margin-bottom: 2px;">${title}</div>
+          <div style="font-size: 12px; color: #666; opacity: 0.8;">${subtitle}</div>
+        </div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeInScale {
+          0% { opacity: 0; transform: scale(0.9); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      </style>
+    `
+    
+    document.body.appendChild(loader)
+  }
+
+  private showQuickSuccessIndicator(x: number, y: number) {
+    const indicator = document.createElement('div')
+    indicator.style.cssText = `
+      position: fixed;
+      left: ${Math.min(x, window.innerWidth - 60)}px;
+      top: ${Math.min(y + 40, window.innerHeight - 60)}px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647;
+      font-size: 24px;
+      color: white;
+      animation: successPop 0.6s ease;
+      pointer-events: none;
+    `
+    
+    indicator.innerHTML = `
+      ✅
+      <style>
+        @keyframes successPop {
+          0% { opacity: 0; transform: scale(0.5); }
+          50% { opacity: 1; transform: scale(1.1); }
+          100% { opacity: 0; transform: scale(1); }
+        }
+      </style>
+    `
+    
+    document.body.appendChild(indicator)
+    setTimeout(() => indicator.remove(), 600)
+  }
+
+  private detectErrorType(errorMessage?: string): string {
+    if (!errorMessage) return 'unknown'
+    
+    const message = errorMessage.toLowerCase()
+    if (message.includes('user activation') || message.includes('interaction')) {
+      return 'activation-required'
+    } else if (message.includes('download') || message.includes('model')) {
+      return 'download-required'
+    } else if (message.includes('version') || message.includes('chrome')) {
+      return 'version-outdated'
+    } else if (message.includes('flag') || message.includes('enable')) {
+      return 'flags-disabled'
+    } else if (message.includes('setup instructions')) {
+      return 'api-unavailable'
+    } else if (message.includes('connection') || message.includes('network')) {
+      return 'connection-error'
+    }
+    return 'unknown'
+  }
+
+  private getSetupInstructions(): string[] {
+    return [
+      '1. Use Chrome Canary (not regular Chrome)',
+      '2. Go to chrome://flags/#optimization-guide-on-device-model',
+      '3. Set to "Enabled BypassPerfRequirement"',
+      '4. Go to chrome://flags/#prompt-api-for-gemini-nano',
+      '5. Set to "Enabled"',
+      '6. Restart Chrome Canary',
+      '7. Visit chrome://components/ and update "Optimization Guide On Device Model"'
+    ]
+  }
+
+  private showEnhancedErrorNotification(title: string, message: string, errorType: string) {
+    const notification = document.createElement('div')
+    notification.className = 'levellens-notification'
+    
+    const showInstructions = errorType === 'api-unavailable' || errorType === 'flags-disabled'
+    const instructions = showInstructions ? this.getSetupInstructions() : []
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border: 2px solid #dc2626;
+      border-radius: 16px;
+      padding: 20px 24px;
+      max-width: ${showInstructions ? '480px' : '360px'};
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+      z-index: 2147483647;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      animation: slideInRight 0.4s ease;
+      color: white;
+      backdrop-filter: blur(10px);
+    `
+    
+    const instructionsList = showInstructions ? `
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">Setup Instructions:</div>
+        <div style="font-size: 12px; line-height: 1.5;">
+          ${instructions.map(instruction => `<div style="margin-bottom: 4px;">• ${instruction}</div>`).join('')}
+        </div>
+      </div>
+    ` : ''
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <span style="font-size: 24px; flex-shrink: 0;">❌</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; margin-bottom: 6px;">${title}</div>
+          <div style="font-size: 13px; opacity: 0.95; line-height: 1.4; margin-bottom: 4px;">${message}</div>
+          ${instructionsList}
+        </div>
+        <button 
+          onclick="this.closest('.levellens-notification').remove()" 
+          style="background: none; border: none; color: white; cursor: pointer; font-size: 18px; padding: 4px; line-height: 1; border-radius: 4px; opacity: 0.8; transition: opacity 0.2s;"
+          onmouseover="this.style.opacity='1'"
+          onmouseout="this.style.opacity='0.8'"
+        >×</button>
+      </div>
+    `
+    
+    document.body.appendChild(notification)
+    this.autoRemoveNotification(notification, showInstructions ? 15000 : 8000)
   }
 
   private hideLoadingIndicator() {

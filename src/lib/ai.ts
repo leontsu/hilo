@@ -9,15 +9,105 @@ import type {
   AICapabilities
 } from '../types'
 
-// Local fallback data removed - all processing now handled by Chrome's built-in AI
 
-// Local fallback functions removed - extension now requires Chrome's built-in AI
-// If AI is not available, clear error messages will be shown to users
+// AI API Access Methods Interface
+interface AIAPIAccess {
+  languageModel?: any
+  summarizer?: any
+  writer?: any
+}
 
-// AI Capability Detection
+// Chrome Version Detection for Better Error Messages
+function getChromeVersion(): string {
+  try {
+    const userAgent = navigator.userAgent
+    const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/)
+    if (chromeMatch) {
+      return chromeMatch[1]
+    }
+    return 'Unknown'
+  } catch (error) {
+    return 'Detection failed'
+  }
+}
+
+// Enhanced Error Message Generator
+function getAIErrorMessage(errorType: string, chromeVersion: string): string {
+  const baseMessages = {
+    'api-unavailable': `Chrome's built-in AI is not available. This requires Chrome Canary 128+ with experimental AI features enabled.`,
+    'activation-required': `User interaction required. Please click or interact with the page first before using AI features.`,
+    'download-required': `AI model needs to be downloaded. This may take a few minutes on first use.`,
+    'version-outdated': `Your Chrome version (${chromeVersion}) may not support AI features. Please update to Chrome Canary 128+.`,
+    'flags-disabled': `AI features are disabled. Please enable them in chrome://flags/#optimization-guide-on-device-model`
+  }
+  
+  const instructions = [
+    '1. Use Chrome Canary (not regular Chrome)',
+    '2. Go to chrome://flags/#optimization-guide-on-device-model',
+    '3. Set to "Enabled BypassPerfRequirement"',
+    '4. Go to chrome://flags/#prompt-api-for-gemini-nano',
+    '5. Set to "Enabled"',
+    '6. Restart Chrome Canary',
+    '7. Visit chrome://components/ and update "Optimization Guide On Device Model"'
+  ]
+  
+  return `${baseMessages[errorType] || 'AI feature unavailable'}\n\nSetup Instructions:\n${instructions.join('\n')}`
+}
+
+// Comprehensive API Detection with Fallback Chain
+function getAIAPIAccess(): AIAPIAccess {
+  // Try multiple access methods in order of preference
+  
+  // Method 1: self.ai (working implementation)
+  if (typeof self !== 'undefined' && (self as any).ai) {
+    console.log('[AI] Found self.ai interface')
+    return {
+      languageModel: (self as any).ai.languageModel,
+      summarizer: (self as any).ai.summarizer,
+      writer: (self as any).ai.writer
+    }
+  }
+  
+  // Method 2: window.ai (some documentation references)
+  if (typeof window !== 'undefined' && (window as any).ai) {
+    console.log('[AI] Found window.ai interface')
+    return {
+      languageModel: (window as any).ai.languageModel,
+      summarizer: (window as any).ai.summarizer,
+      writer: (window as any).ai.writer
+    }
+  }
+  
+  // Method 3: Global objects (official documentation)
+  const globalAccess: AIAPIAccess = {}
+  if (typeof (globalThis as any).LanguageModel !== 'undefined') {
+    globalAccess.languageModel = (globalThis as any).LanguageModel
+  }
+  if (typeof (globalThis as any).Summarizer !== 'undefined') {
+    globalAccess.summarizer = (globalThis as any).Summarizer
+  }
+  if (typeof (globalThis as any).Writer !== 'undefined') {
+    globalAccess.writer = (globalThis as any).Writer
+  }
+  
+  if (Object.keys(globalAccess).length > 0) {
+    console.log('[AI] Found global AI objects:', Object.keys(globalAccess))
+    return globalAccess
+  }
+  
+  console.log('[AI] No AI APIs found')
+  return {}
+}
+
+// Enhanced AI Capability Detection
 export async function checkAICapabilities(): Promise<AICapabilities> {
   try {
-    console.log('[AI] Checking AI capabilities...')
+    console.log('[AI] Starting comprehensive AI capability check...')
+    
+    // Check Chrome version for better error messages
+    const chromeVersion = getChromeVersion()
+    console.log('[AI] Chrome version:', chromeVersion)
+    
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
@@ -25,55 +115,89 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       writer: false
     }
 
-    // Return default capabilities if window is not available (e.g., in service worker)
-    if (typeof window === 'undefined') {
-      console.log('[AI] Window not available, returning default capabilities')
+    // Return default capabilities if running in service worker
+    if (typeof window === 'undefined' && typeof self === 'undefined') {
+      console.log('[AI] No window/self context available, returning default capabilities')
       return capabilities
     }
 
-    // Check Language Model API (global LanguageModel function)
+    // Check user activation requirement
+    if (typeof navigator !== 'undefined' && navigator.userActivation) {
+      console.log('[AI] User activation status:', navigator.userActivation.isActive)
+      if (!navigator.userActivation.isActive) {
+        console.warn('[AI] User activation required for AI APIs')
+      }
+    }
+
+    // Get API access methods
+    const apiAccess = getAIAPIAccess()
+
+    // Check Language Model API
     console.log('[AI] Checking LanguageModel API...')
-    if (typeof (globalThis as any).LanguageModel === 'function') {
+    if (apiAccess.languageModel) {
       try {
-        const status = await (globalThis as any).LanguageModel.availability()
-        console.log('[AI] LanguageModel status:', status)
-        capabilities.languageModel = status === 'readily' || status === 'downloadable'
-        console.log('[AI] LanguageModel available:', capabilities.languageModel)
+        let availability
+        if (typeof apiAccess.languageModel.capabilities === 'function') {
+          // For self.ai/window.ai interface
+          const caps = await apiAccess.languageModel.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.languageModel.availability === 'function') {
+          // For global object interface
+          availability = await apiAccess.languageModel.availability()
+        }
+        
+        console.log('[AI] LanguageModel availability:', availability)
+        capabilities.languageModel = availability === 'readily' || availability === 'after-download'
+        console.log('[AI] LanguageModel ready:', capabilities.languageModel)
       } catch (e) {
-        console.log('[AI] Language Model API not available:', e)
+        console.log('[AI] LanguageModel check failed:', e)
       }
     } else {
-      console.log('[AI] LanguageModel function not found on globalThis')
+      console.log('[AI] LanguageModel API not found')
     }
 
-    // Check Summarizer API (global Summarizer function)
+    // Check Summarizer API
     console.log('[AI] Checking Summarizer API...')
-    if (typeof (globalThis as any).Summarizer === 'function') {
+    if (apiAccess.summarizer) {
       try {
-        const status = await (globalThis as any).Summarizer.availability()
-        console.log('[AI] Summarizer status:', status)
-        capabilities.summarizer = status === 'readily' || status === 'downloadable'
-        console.log('[AI] Summarizer available:', capabilities.summarizer)
+        let availability
+        if (typeof apiAccess.summarizer.capabilities === 'function') {
+          const caps = await apiAccess.summarizer.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.summarizer.availability === 'function') {
+          availability = await apiAccess.summarizer.availability()
+        }
+        
+        console.log('[AI] Summarizer availability:', availability)
+        capabilities.summarizer = availability === 'readily' || availability === 'after-download'
+        console.log('[AI] Summarizer ready:', capabilities.summarizer)
       } catch (e) {
-        console.log('[AI] Summarizer API not available:', e)
+        console.log('[AI] Summarizer check failed:', e)
       }
     } else {
-      console.log('[AI] Summarizer function not found on globalThis')
+      console.log('[AI] Summarizer API not found')
     }
 
-    // Check Writer API (global Writer function)
+    // Check Writer API
     console.log('[AI] Checking Writer API...')
-    if (typeof (globalThis as any).Writer === 'function') {
+    if (apiAccess.writer) {
       try {
-        const status = await (globalThis as any).Writer.availability()
-        console.log('[AI] Writer status:', status)
-        capabilities.writer = status === 'readily' || status === 'downloadable'
-        console.log('[AI] Writer available:', capabilities.writer)
+        let availability
+        if (typeof apiAccess.writer.capabilities === 'function') {
+          const caps = await apiAccess.writer.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.writer.availability === 'function') {
+          availability = await apiAccess.writer.availability()
+        }
+        
+        console.log('[AI] Writer availability:', availability)
+        capabilities.writer = availability === 'readily' || availability === 'after-download'
+        console.log('[AI] Writer ready:', capabilities.writer)
       } catch (e) {
-        console.log('[AI] Writer API not available:', e)
+        console.log('[AI] Writer check failed:', e)
       }
     } else {
-      console.log('[AI] Writer function not found on globalThis')
+      console.log('[AI] Writer API not found')
     }
 
     console.log('[AI] Final capabilities:', capabilities)
@@ -89,6 +213,47 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
   }
 }
 
+// Unified API Wrapper Functions
+async function createLanguageModelSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.languageModel) {
+    throw new Error('LanguageModel API not available')
+  }
+  
+  // Handle different API interfaces
+  if (typeof apiAccess.languageModel.create === 'function') {
+    return await apiAccess.languageModel.create(options)
+  }
+  
+  throw new Error('LanguageModel.create method not found')
+}
+
+async function createSummarizerSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.summarizer) {
+    throw new Error('Summarizer API not available')
+  }
+  
+  if (typeof apiAccess.summarizer.create === 'function') {
+    return await apiAccess.summarizer.create(options)
+  }
+  
+  throw new Error('Summarizer.create method not found')
+}
+
+async function createWriterSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.writer) {
+    throw new Error('Writer API not available')
+  }
+  
+  if (typeof apiAccess.writer.create === 'function') {
+    return await apiAccess.writer.create(options)
+  }
+  
+  throw new Error('Writer.create method not found')
+}
+
 // Chrome Built-in AI Implementation
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
   let session: any = null
@@ -98,19 +263,24 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     console.log('[AI] simplifyTextAI called with level:', settings.level)
     console.log('[AI] Text to simplify (first 100 chars):', text.substring(0, 100))
     
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
     if (!capabilities.languageModel) {
-      throw new Error('AI Language Model is not available. Please enable Chrome\'s built-in AI features or use a browser that supports them.')
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (Object.keys(apiAccess).length === 0) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
+      }
     }
 
     console.log('[AI] Creating LanguageModel session...')
-    // Use global LanguageModel for text simplification
-    session = await (globalThis as any).LanguageModel.create({
-      systemPrompt: buildSimplificationPrompt(settings.level),
-      temperature: 0.7,
-      topK: 3,
-      outputLanguage: 'en'
+    // Use unified API wrapper for text simplification
+    session = await createLanguageModelSession({
+      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
+      temperature: 0.7
     })
     console.log('[AI] Session created successfully')
 
@@ -122,9 +292,11 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     if (capabilities.summarizer) {
       try {
         console.log('[AI] Creating Summarizer session...')
-        // Use global Summarizer for summary
-        summarizer = await (globalThis as any).Summarizer.create({
-          outputLanguage: 'en'
+        // Use unified API wrapper for summary
+        summarizer = await createSummarizerSession({
+          type: 'tl;dr',
+          format: 'plain-text',
+          length: 'short'
         })
         console.log('[AI] Generating summary...')
         summary = await summarizer.summarize(simplified)
@@ -146,7 +318,25 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     }
   } catch (error) {
     console.error('AI simplification error:', error)
-    throw new Error(error instanceof Error ? error.message : 'AI simplification failed. Please ensure Chrome\'s built-in AI is enabled.')
+    
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
+      }
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+      }
+    }
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
     // Cleanup resources
     try {
@@ -165,16 +355,24 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     console.log('[AI] generateQuizAI called with level:', settings.level)
     console.log('[AI] Text for quiz (first 100 chars):', text.substring(0, 100))
     
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
     if (!capabilities.writer) {
-      throw new Error('AI Writer is not available. Please enable Chrome\'s built-in AI features or use a browser that supports them.')
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (!apiAccess.writer) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
+      }
     }
 
     console.log('[AI] Creating Writer session for quiz generation...')
-    // Use global Writer API for quiz generation
-    session = await (globalThis as any).Writer.create({
-      outputLanguage: 'en'
+    // Use unified API wrapper for quiz generation
+    session = await createWriterSession({
+      format: 'plain-text',
+      tone: 'formal'
     })
     console.log('[AI] Writer session created')
 
@@ -198,7 +396,25 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     }
   } catch (error) {
     console.error('AI quiz generation error:', error)
-    throw new Error(error instanceof Error ? error.message : 'AI quiz generation failed. Please ensure Chrome\'s built-in AI is enabled.')
+    
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
+      }
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+      }
+    }
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
     // Cleanup resources
     try {
@@ -216,18 +432,23 @@ export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSet
     console.log('[AI] simplifyCaptionsAI called with', lines.length, 'caption lines')
     console.log('[AI] CEFR level:', settings.level)
     
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
     if (!capabilities.languageModel) {
-      throw new Error('AI Language Model is not available. Please enable Chrome\'s built-in AI features or use a browser that supports them.')
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (Object.keys(apiAccess).length === 0) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
+      }
     }
 
     console.log('[AI] Creating LanguageModel session for captions...')
-    session = await (globalThis as any).LanguageModel.create({
-      systemPrompt: buildSimplificationPrompt(settings.level),
-      temperature: 0.7,
-      topK: 3,
-      outputLanguage: 'en'
+    session = await createLanguageModelSession({
+      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
+      temperature: 0.7
     })
     console.log('[AI] Caption session created')
 
@@ -271,7 +492,25 @@ export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSet
     return simplifiedLines
   } catch (error) {
     console.error('AI caption simplification error:', error)
-    throw new Error(error instanceof Error ? error.message : 'AI caption simplification failed. Please ensure Chrome\'s built-in AI is enabled.')
+    
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
+      }
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+      }
+    }
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
     // Cleanup resources
     try {
