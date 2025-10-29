@@ -213,7 +213,7 @@ hilo/
 - Smart session management and resource cleanup
 - All settings automatically saved and synced via Chrome Storage
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing Checklist
 1. **AI Setup**: Verify Chrome Built-in AI is enabled and models are downloaded
