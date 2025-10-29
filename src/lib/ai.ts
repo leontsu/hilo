@@ -2,8 +2,6 @@ import type {
   CEFRLevel, 
   UserSettings, 
   SimplificationResponse,
-  CaptionLine,
-  SimplifiedCaptionLine,
   QuizQuestion,
   QuizResponse,
   AICapabilities
@@ -482,103 +480,6 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     }
   } catch (error) {
     console.error('AI quiz generation error:', error)
-    
-    // Enhanced error handling with specific guidance
-    if (error instanceof Error) {
-      // If it's already an enhanced error message, pass it through
-      if (error.message.includes('Setup Instructions:')) {
-        throw error
-      }
-      
-      // Provide specific error guidance based on error type
-      if (error.message.includes('user activation')) {
-        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
-      } else if (error.message.includes('download') || error.message.includes('model')) {
-        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
-      } else {
-        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
-      }
-    }
-    
-    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
-  } finally {
-    // Cleanup resources
-    try {
-      if (session) session.destroy()
-    } catch (cleanupError) {
-      console.warn('Resource cleanup error:', cleanupError)
-    }
-  }
-}
-
-export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSettings): Promise<SimplifiedCaptionLine[]> {
-  let session: any = null
-  
-  try {
-    console.log('[AI] simplifyCaptionsAI called with', lines.length, 'caption lines')
-    console.log('[AI] CEFR level:', settings.level)
-    
-    const chromeVersion = getChromeVersion()
-    const capabilities = await checkAICapabilities()
-    
-    if (!capabilities.languageModel) {
-      // Provide enhanced error message based on likely cause
-      const apiAccess = getAIAPIAccess()
-      if (Object.keys(apiAccess).length === 0) {
-        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
-      } else {
-        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
-      }
-    }
-
-    console.log('[AI] Creating LanguageModel session for captions...')
-    session = await createLanguageModelSession({
-      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
-      temperature: 0.7,
-      topK: 40
-    })
-    console.log('[AI] Caption session created')
-
-    console.log('[AI] Processing', lines.length, 'caption lines...')
-    const simplifiedLines = await Promise.all(
-      lines.map(async (line, index) => {
-        if (line.text.trim().length < 8 || /\[Music\]/i.test(line.text)) {
-          console.log(`[AI] Skipping caption ${index + 1} (too short or music)`)
-          return {
-            tStart: line.tStart,
-            tEnd: line.tEnd,
-            original: line.text,
-            simplified: line.text
-          }
-        }
-
-        try {
-          console.log(`[AI] Simplifying caption ${index + 1}/${lines.length}:`, line.text.substring(0, 50))
-          const simplified = await session.prompt(`Simplify: "${line.text}"`)
-          console.log(`[AI] Caption ${index + 1} simplified:`, simplified.substring(0, 50))
-          return {
-            tStart: line.tStart,
-            tEnd: line.tEnd,
-            original: line.text,
-            simplified: simplified.trim()
-          }
-        } catch (error) {
-          console.error(`[AI] Error simplifying caption ${index + 1}:`, error)
-          // Return original text for individual caption errors
-          return {
-            tStart: line.tStart,
-            tEnd: line.tEnd,
-            original: line.text,
-            simplified: line.text
-          }
-        }
-      })
-    )
-
-    console.log('[AI] All captions processed')
-    return simplifiedLines
-  } catch (error) {
-    console.error('AI caption simplification error:', error)
     
     // Enhanced error handling with specific guidance
     if (error instanceof Error) {

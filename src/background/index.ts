@@ -1,6 +1,5 @@
 import { 
   simplifyTextAI, 
-  simplifyCaptionsAI, 
   generateQuizAI, 
   checkAICapabilities
 } from '../lib/ai'
@@ -16,7 +15,6 @@ import type {
   MessageRequest, 
   MessageResponse, 
   SimplificationRequest, 
-  CaptionSimplificationRequest,
   QuizRequest
 } from '../types'
 
@@ -79,9 +77,6 @@ async function handleMessage(
     switch (request.type) {
       case 'SIMPLIFY_TEXT':
         return await handleTextSimplification(request as SimplificationRequest)
-      
-      case 'SIMPLIFY_CAPTIONS':
-        return await handleCaptionSimplification(request as CaptionSimplificationRequest)
       
       case 'GENERATE_QUIZ':
         return await handleQuizGeneration(request as QuizRequest)
@@ -168,38 +163,6 @@ async function handleTextSimplification(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Simplification failed'
-    }
-  }
-}
-
-async function handleCaptionSimplification(
-  request: CaptionSimplificationRequest
-): Promise<MessageResponse> {
-  try {
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // Validate input
-    if (!request.lines || request.lines.length === 0) {
-      return {
-        success: false,
-        error: 'No caption lines provided'
-      }
-    }
-
-    // Simplify the captions using AI
-    const simplifiedLines = await simplifyCaptionsAI(request.lines, settings)
-    
-    return {
-      success: true,
-      data: { lines: simplifiedLines }
-    }
-  } catch (error) {
-    console.error('Caption simplification error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Caption simplification failed'
     }
   }
 }

@@ -183,10 +183,6 @@ const OptionsApp: React.FC = () => {
               <p>Select any text (8+ characters) to see the toolbar. Click "Adjust Level" to change text to your CEFR level.</p>
             </div>
             <div className="instruction-item">
-              <h3>🎥 YouTube</h3>
-              <p>Click the "EASY" button that appears on YouTube videos to enable adjusted captions.</p>
-            </div>
-            <div className="instruction-item">
               <h3>⚙️ Settings</h3>
               <p>Changes take effect immediately. All your settings are synced across your Chrome browsers.</p>
             </div>
