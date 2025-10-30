@@ -2,18 +2,14 @@ import { defineManifest } from '@crxjs/vite-plugin'
 
 export default defineManifest({
   manifest_version: 3,
-  name: 'LevelLens - Adaptive Translator',
+  name: 'Hilo - Adaptive Translator',
   version: '1.0.0',
-  description: 'Adaptive Translator for the Real Web - Simplify content to your CEFR level',
+  description: 'Adaptive Translator for the Real Web - Adjust content to your CEFR level',
   
   permissions: [
     'storage',
     'activeTab',
-    'scripting',
-    'aiLanguageModelOriginTrial',
-    'aiSummarizerOriginTrial',
-    'aiTranslatorOriginTrial',
-    'aiWriterOriginTrial'
+    'scripting'
   ],
   
   host_permissions: [
@@ -42,7 +38,7 @@ export default defineManifest({
   
   action: {
     default_popup: 'src/ui/popup.html',
-    default_title: 'LevelLens Settings'
+    default_title: 'Hilo Settings'
   },
   
   options_ui: {
@@ -51,15 +47,20 @@ export default defineManifest({
   },
   
   icons: {
-    16: 'icons/icon-16.png',
-    32: 'icons/icon-32.png',
-    48: 'icons/icon-48.png',
-    128: 'icons/icon-128.png'
+    16: 'icons/icon16.png',
+    32: 'icons/icon32.png',
+    48: 'icons/icon48.png',
+    128: 'icons/icon128.png'
   },
   
   web_accessible_resources: [
     {
-      resources: ['src/content/styles.css'],
+      resources: [
+        'src/content/styles.css',
+        'assets/*.js',
+        'assets/*.css',
+        'src/ui/*.html'
+      ],
       matches: ['<all_urls>']
     }
   ]

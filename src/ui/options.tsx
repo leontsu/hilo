@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getSettings, saveSettings } from '../lib/storage'
-import type { CEFRLevel, OutputLanguage, UserSettings } from '../types'
+import type { CEFRLevel, UserSettings } from '../types'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string; examples: string[] }[] = [
   {
@@ -36,15 +36,9 @@ const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string; examp
   }
 ]
 
-const OUTPUT_LANGUAGES: { value: OutputLanguage; label: string; description: string }[] = [
-  { value: 'en', label: 'English', description: 'Simplify text while keeping English language' },
-  { value: 'ja', label: '日本語 (Japanese)', description: 'Translate and simplify to Japanese' }
-]
-
 const OptionsApp: React.FC = () => {
   const [settings, setSettings] = useState<UserSettings>({
     level: 'B1',
-    outputLanguage: 'en',
     enabled: true
   })
   const [loading, setLoading] = useState(true)
@@ -72,8 +66,10 @@ const OptionsApp: React.FC = () => {
     
     try {
       const newSettings = { ...settings, [key]: value }
+      console.log('Hilo: Saving setting change:', key, '=', value)
       await saveSettings({ [key]: value })
       setSettings(newSettings)
+      console.log('Hilo: Settings saved successfully:', newSettings)
       setSaveMessage('Settings saved successfully!')
       
       setTimeout(() => setSaveMessage(''), 3000)
@@ -91,7 +87,6 @@ const OptionsApp: React.FC = () => {
       try {
         const defaultSettings: UserSettings = {
           level: 'B1',
-          outputLanguage: 'en',
           enabled: true
         }
         await saveSettings(defaultSettings)
@@ -118,8 +113,7 @@ const OptionsApp: React.FC = () => {
   return (
     <div className="options-container">
       <header className="options-header">
-        <h1>LevelLens Settings</h1>
-        <p>Configure your adaptive translation preferences</p>
+        <h1>Hilo</h1>
       </header>
 
       <main className="options-main">
@@ -135,10 +129,10 @@ const OptionsApp: React.FC = () => {
                 disabled={saving}
               />
               <span className="checkmark"></span>
-              Enable LevelLens on all websites
+              <span className="setting-label-text">Enable Hilo on all websites</span>
             </label>
             <p className="setting-help">
-              When disabled, LevelLens will not process any text or show simplification options.
+              When disabled, Hilo will not process any text or show level adjustment options.
             </p>
           </div>
         </section>
@@ -182,38 +176,15 @@ const OptionsApp: React.FC = () => {
         </section>
 
         <section className="settings-section">
-          <h2>Output Language</h2>
-          
-          <div className="language-options">
-            {OUTPUT_LANGUAGES.map(lang => (
-              <label key={lang.value} className="language-option">
-                <input
-                  type="radio"
-                  name="outputLanguage"
-                  value={lang.value}
-                  checked={settings.outputLanguage === lang.value}
-                  onChange={() => handleSettingChange('outputLanguage', lang.value)}
-                  disabled={saving || !settings.enabled}
-                />
-                <div className="language-info">
-                  <h3>{lang.label}</h3>
-                  <p>{lang.description}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <section className="settings-section">
           <h2>Usage Instructions</h2>
           <div className="instructions">
             <div className="instruction-item">
               <h3>📄 Web Pages</h3>
-              <p>Select any text (8+ characters) to see the simplification toolbar. Click "Simplify" to get an easier version.</p>
+              <p>Select any text (8+ characters) to see the toolbar. Click "Adjust Level" to change text to your CEFR level.</p>
             </div>
             <div className="instruction-item">
               <h3>🎥 YouTube</h3>
-              <p>Click the "EASY" button that appears on YouTube videos to enable simplified captions.</p>
+              <p>Click the "EASY" button that appears on YouTube videos to enable adjusted captions.</p>
             </div>
             <div className="instruction-item">
               <h3>⚙️ Settings</h3>
@@ -241,7 +212,7 @@ const OptionsApp: React.FC = () => {
         </div>
         
         <div className="footer-info">
-          <p>LevelLens v1.0.0 - Adaptive Language Learning Chrome Extension</p>
+          <p>Hilo v1.0.0 - Adaptive Language Learning Chrome Extension</p>
         </div>
       </footer>
     </div>

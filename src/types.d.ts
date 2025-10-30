@@ -1,10 +1,19 @@
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1'
-export type OutputLanguage = 'en' | 'ja'
 
 export interface UserSettings {
   level: CEFRLevel
-  outputLanguage: OutputLanguage
   enabled: boolean
+  outputLanguage?: string
+}
+
+export interface UsageStatistics {
+  totalSimplifications: number
+  totalQuizzes: number
+  totalWords: number
+  todaySimplifications: number
+  todayQuizzes: number
+  todayWords: number
+  lastResetDate: string
 }
 
 export interface SimplificationRequest {
@@ -13,12 +22,17 @@ export interface SimplificationRequest {
   settings: UserSettings
 }
 
+export interface PageAdjustmentRequest {
+  type: 'ADJUST_PAGE'
+  settings: UserSettings
+}
+
 export interface SimplificationResponse {
   simplified: string
   summary?: string
   originalText: string
-  translation?: string
   quiz?: QuizQuestion[]
+  translation?: string
 }
 
 export interface CaptionSimplificationRequest {
@@ -64,7 +78,6 @@ export interface QuizResponse {
   originalText: string
 }
 
-// Translation types
 export interface TranslationRequest {
   type: 'TRANSLATE_TEXT'
   text: string
@@ -94,6 +107,10 @@ export interface AICapabilityResponse {
   capabilities: AICapabilities
 }
 
+export interface GetSettingsRequest {
+  type: 'GET_SETTINGS'
+}
+
 // Chrome AI API types
 declare global {
   interface Window {
@@ -111,22 +128,46 @@ declare global {
         capabilities: () => Promise<any>
       }
     }
-    translation?: {
-      createTranslator: (options: any) => Promise<any>
-      canTranslate: (options: any) => Promise<string>
-    }
+  }
+  
+  // Global Chrome AI APIs
+  const LanguageModel: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Summarizer: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Writer: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Rewriter: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
+  }
+  
+  const Proofreader: {
+    create: (options?: any) => Promise<any>
+    availability: () => Promise<string>
   }
 }
 
 export type MessageRequest = 
   | SimplificationRequest 
+  | PageAdjustmentRequest
   | CaptionSimplificationRequest
   | QuizRequest
   | TranslationRequest
   | AICapabilityRequest
+  | GetSettingsRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse
+  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | { message: string, settings?: UserSettings }
   error?: string
 }

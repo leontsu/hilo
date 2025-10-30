@@ -1,176 +1,119 @@
 import type { 
   CEFRLevel, 
-  OutputLanguage, 
   UserSettings, 
   SimplificationResponse,
   CaptionLine,
   SimplifiedCaptionLine,
   QuizQuestion,
   QuizResponse,
-  TranslationResponse,
   AICapabilities
 } from '../types'
 
-// Word replacement dictionary for different CEFR levels
-const WORD_REPLACEMENTS: Record<CEFRLevel, Record<string, string>> = {
-  A1: {
-    'difficult': 'hard',
-    'enormous': 'very big',
-    'purchase': 'buy',
-    'automobile': 'car',
-    'residence': 'home',
-    'utilize': 'use',
-    'commence': 'start',
-    'terminate': 'end',
-    'magnificent': 'great',
-    'demonstrate': 'show'
-  },
-  A2: {
-    'enormous': 'huge',
-    'purchase': 'buy',
-    'automobile': 'car',
-    'residence': 'house',
-    'utilize': 'use',
-    'commence': 'begin',
-    'terminate': 'finish',
-    'demonstrate': 'show',
-    'approximately': 'about',
-    'investigate': 'look into'
-  },
-  B1: {
-    'enormous': 'huge',
-    'automobile': 'vehicle',
-    'residence': 'house',
-    'utilize': 'use',
-    'commence': 'begin',
-    'demonstrate': 'show',
-    'approximately': 'about',
-    'investigate': 'examine',
-    'substantial': 'large',
-    'comprehensive': 'complete'
-  },
-  B2: {
-    'utilize': 'use',
-    'commence': 'begin',
-    'demonstrate': 'show',
-    'investigate': 'examine',
-    'substantial': 'significant',
-    'comprehensive': 'thorough',
-    'elaborate': 'detailed',
-    'diminish': 'reduce',
-    'constitute': 'make up',
-    'accumulate': 'collect'
-  },
-  C1: {
-    'demonstrate': 'show',
-    'substantial': 'significant',
-    'elaborate': 'detailed',
-    'constitute': 'form',
-    'accumulate': 'gather',
-    'scrutinize': 'examine closely',
-    'contemplate': 'consider',
-    'perpetuate': 'continue',
-    'circumvent': 'avoid',
-    'corroborate': 'confirm'
-  }
+
+// AI API Access Methods Interface
+interface AIAPIAccess {
+  languageModel?: any
+  summarizer?: any
+  writer?: any
 }
 
-// Maximum sentence length by CEFR level
-const MAX_SENTENCE_LENGTH: Record<CEFRLevel, number> = {
-  A1: 10,
-  A2: 15,
-  B1: 20,
-  B2: 25,
-  C1: 30
-}
-
-export function simplifyText(text: string, settings: UserSettings): SimplificationResponse {
-  // Skip if text is too short or contains only symbols/music notation
-  if (text.length < 8 || /^[\[\](){}.,!?;:\s\-_]*$/.test(text) || /\[Music\]/i.test(text)) {
-    return {
-      simplified: text,
-      summary: '',
-      originalText: text
-    }
-  }
-
+// Chrome Version Detection for Better Error Messages
+function getChromeVersion(): string {
   try {
-    // Clean and normalize text
-    let simplified = text.trim()
-    
-    // Apply word replacements based on CEFR level
-    const replacements = WORD_REPLACEMENTS[settings.level] || {}
-    Object.entries(replacements).forEach(([complex, simple]) => {
-      const regex = new RegExp(`\\b${complex}\\b`, 'gi')
-      simplified = simplified.replace(regex, simple)
-    })
-
-    // Split into sentences and simplify structure
-    const sentences = simplified.split(/[.!?]+/).filter(s => s.trim().length > 0)
-    const maxLength = MAX_SENTENCE_LENGTH[settings.level]
-    
-    const simplifiedSentences = sentences.map(sentence => {
-      const words = sentence.trim().split(/\s+/)
-      if (words.length <= maxLength) {
-        return sentence.trim()
-      }
-      
-      // Break long sentences into shorter ones
-      const chunks: string[] = []
-      for (let i = 0; i < words.length; i += maxLength) {
-        chunks.push(words.slice(i, i + maxLength).join(' '))
-      }
-      return chunks.join('. ')
-    })
-
-    simplified = simplifiedSentences.join('. ').replace(/\.\s*\./g, '.').trim()
-    
-    // Add period if not present
-    if (simplified && !simplified.match(/[.!?]$/)) {
-      simplified += '.'
+    const userAgent = navigator.userAgent
+    const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/)
+    if (chromeMatch) {
+      return chromeMatch[1]
     }
-
-    // Generate summary (first 60 characters)
-    const summary = simplified.length > 60 
-      ? simplified.substring(0, 57) + '...'
-      : simplified
-
-    // Apply language output if Japanese is requested
-    if (settings.outputLanguage === 'ja') {
-      // Simple stub for Japanese output - in real implementation this would use proper translation
-      simplified = `[簡単] ${simplified}`
-    }
-
-    return {
-      simplified,
-      summary,
-      originalText: text
-    }
+    return 'Unknown'
   } catch (error) {
-    console.error('Simplification error:', error)
-    return {
-      simplified: text,
-      summary: 'Error occurred during simplification',
-      originalText: text
-    }
+    return 'Detection failed'
   }
 }
 
-export function simplifyCaptions(lines: CaptionLine[], settings: UserSettings): SimplifiedCaptionLine[] {
-  return lines.map(line => {
-    const result = simplifyText(line.text, settings)
-    return {
-      tStart: line.tStart,
-      tEnd: line.tEnd,
-      original: line.text,
-      simplified: result.simplified
-    }
-  }).filter(line => line.original.trim().length > 0)
+// Enhanced Error Message Generator
+function getAIErrorMessage(errorType: string, chromeVersion: string): string {
+  const baseMessages: Record<string, string> = {
+    'api-unavailable': `Chrome's built-in AI is not available. This requires Chrome Canary 128+ with experimental AI features enabled.`,
+    'activation-required': `User interaction required. Please click or interact with the page first before using AI features.`,
+    'download-required': `AI model needs to be downloaded. This may take a few minutes on first use.`,
+    'version-outdated': `Your Chrome version (${chromeVersion}) may not support AI features. Please update to Chrome Canary 128+.`,
+    'flags-disabled': `AI features are disabled. Please enable them in chrome://flags/#optimization-guide-on-device-model`
+  }
+  
+  const instructions = [
+    '1. Use Chrome Canary (not regular Chrome)',
+    '2. Go to chrome://flags/#optimization-guide-on-device-model',
+    '3. Set to "Enabled BypassPerfRequirement"',
+    '4. Go to chrome://flags/#prompt-api-for-gemini-nano',
+    '5. Set to "Enabled"',
+    '6. Restart Chrome Canary',
+    '7. Visit chrome://components/ and update "Optimization Guide On Device Model"'
+  ]
+  
+  return `${baseMessages[errorType] || 'AI feature unavailable'}\n\nSetup Instructions:\n${instructions.join('\n')}`
 }
 
-// AI Capability Detection
+// Comprehensive API Detection with Fallback Chain
+function getAIAPIAccess(): AIAPIAccess {
+  // Try multiple access methods in order of preference
+  
+  // Method 1: globalThis.ai (for service workers)
+  if (typeof (globalThis as any).ai !== 'undefined') {
+    console.log('[AI] Found globalThis.ai interface')
+    return {
+      languageModel: (globalThis as any).ai.languageModel,
+      summarizer: (globalThis as any).ai.summarizer,
+      writer: (globalThis as any).ai.writer
+    }
+  }
+  
+  // Method 2: self.ai (working implementation in content scripts)
+  if (typeof self !== 'undefined' && (self as any).ai) {
+    console.log('[AI] Found self.ai interface')
+    return {
+      languageModel: (self as any).ai.languageModel,
+      summarizer: (self as any).ai.summarizer,
+      writer: (self as any).ai.writer
+    }
+  }
+  
+  // Method 3: window.ai (some documentation references)
+  if (typeof window !== 'undefined' && (window as any).ai) {
+    console.log('[AI] Found window.ai interface')
+    return {
+      languageModel: (window as any).ai.languageModel,
+      summarizer: (window as any).ai.summarizer,
+      writer: (window as any).ai.writer
+    }
+  }
+  
+  // Method 4: Global objects (official documentation)
+  const globalAccess: AIAPIAccess = {}
+  if (typeof (globalThis as any).LanguageModel !== 'undefined') {
+    globalAccess.languageModel = (globalThis as any).LanguageModel
+  }
+  if (typeof (globalThis as any).Summarizer !== 'undefined') {
+    globalAccess.summarizer = (globalThis as any).Summarizer
+  }
+  if (typeof (globalThis as any).Writer !== 'undefined') {
+    globalAccess.writer = (globalThis as any).Writer
+  }
+  
+  if (Object.keys(globalAccess).length > 0) {
+    console.log('[AI] Found global AI objects:', Object.keys(globalAccess))
+    return globalAccess
+  }
+  
+  console.log('[AI] No AI APIs found')
+  return {}
+}
+
+// Enhanced AI Capability Detection
 export async function checkAICapabilities(): Promise<AICapabilities> {
   try {
+    console.log('[AI] Starting comprehensive AI capability check...')
+    
     const capabilities: AICapabilities = {
       languageModel: false,
       summarizer: false,
@@ -178,48 +121,171 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
       writer: false
     }
 
-    // Check Language Model API
-    if ('ai' in window && 'languageModel' in (window as any).ai) {
+    // Check if running in service worker context
+    if (typeof window === 'undefined' && typeof document === 'undefined') {
+      console.log('[AI] Running in service worker context, checking global APIs directly...')
+      
+      // In service worker context, check for global APIs directly
       try {
-        const status = await (window as any).ai.languageModel.capabilities()
-        capabilities.languageModel = status.available === 'readily'
-      } catch (e) {
-        console.log('Language Model API not available:', e)
+        if (typeof (globalThis as any).ai !== 'undefined') {
+          console.log('[AI] Found globalThis.ai in service worker')
+          const ai = (globalThis as any).ai
+          
+          if (ai.languageModel) {
+            try {
+              const availability = await ai.languageModel.capabilities()
+              capabilities.languageModel = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker LanguageModel:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker LanguageModel check failed:', e)
+            }
+          }
+          
+          if (ai.summarizer) {
+            try {
+              const availability = await ai.summarizer.capabilities()
+              capabilities.summarizer = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker Summarizer:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker Summarizer check failed:', e)
+            }
+          }
+          
+          if (ai.writer) {
+            try {
+              const availability = await ai.writer.capabilities()
+              capabilities.writer = availability.available === 'readily' || availability.available === 'after-download' || availability.available === 'available'
+              console.log('[AI] Service Worker Writer:', availability.available)
+            } catch (e) {
+              console.log('[AI] Service Worker Writer check failed:', e)
+            }
+          }
+        } else {
+          console.log('[AI] No globalThis.ai found in service worker, trying global objects...')
+          
+          // Try global objects
+          if (typeof (globalThis as any).LanguageModel !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).LanguageModel.availability()
+              capabilities.languageModel = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global LanguageModel:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global LanguageModel check failed:', e)
+            }
+          }
+          
+          if (typeof (globalThis as any).Summarizer !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).Summarizer.availability()
+              capabilities.summarizer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global Summarizer:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global Summarizer check failed:', e)
+            }
+          }
+          
+          if (typeof (globalThis as any).Writer !== 'undefined') {
+            try {
+              const availability = await (globalThis as any).Writer.availability()
+              capabilities.writer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+              console.log('[AI] Service Worker global Writer:', availability)
+            } catch (e) {
+              console.log('[AI] Service Worker global Writer check failed:', e)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[AI] Service worker API check failed:', error)
       }
+      
+      console.log('[AI] Service worker final capabilities:', capabilities)
+      return capabilities
+    }
+
+    // Check Chrome version for better error messages (only in regular context)
+    const chromeVersion = getChromeVersion()
+    console.log('[AI] Chrome version:', chromeVersion)
+
+    // Check user activation requirement
+    if (typeof navigator !== 'undefined' && navigator.userActivation) {
+      console.log('[AI] User activation status:', navigator.userActivation.isActive)
+      if (!navigator.userActivation.isActive) {
+        console.warn('[AI] User activation required for AI APIs')
+      }
+    }
+
+    // Get API access methods
+    const apiAccess = getAIAPIAccess()
+
+    // Check Language Model API
+    console.log('[AI] Checking LanguageModel API...')
+    if (apiAccess.languageModel) {
+      try {
+        let availability
+        if (typeof apiAccess.languageModel.capabilities === 'function') {
+          // For self.ai/window.ai interface
+          const caps = await apiAccess.languageModel.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.languageModel.availability === 'function') {
+          // For global object interface
+          availability = await apiAccess.languageModel.availability()
+        }
+        
+        console.log('[AI] LanguageModel availability:', availability)
+        capabilities.languageModel = availability === 'readily' || availability === 'after-download' || availability === 'available'
+        console.log('[AI] LanguageModel ready:', capabilities.languageModel)
+      } catch (e) {
+        console.log('[AI] LanguageModel check failed:', e)
+      }
+    } else {
+      console.log('[AI] LanguageModel API not found')
     }
 
     // Check Summarizer API
-    if ('ai' in window && 'summarizer' in (window as any).ai) {
+    console.log('[AI] Checking Summarizer API...')
+    if (apiAccess.summarizer) {
       try {
-        const status = await (window as any).ai.summarizer.capabilities()
-        capabilities.summarizer = status.available === 'readily'
+        let availability
+        if (typeof apiAccess.summarizer.capabilities === 'function') {
+          const caps = await apiAccess.summarizer.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.summarizer.availability === 'function') {
+          availability = await apiAccess.summarizer.availability()
+        }
+        
+        console.log('[AI] Summarizer availability:', availability)
+        capabilities.summarizer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+        console.log('[AI] Summarizer ready:', capabilities.summarizer)
       } catch (e) {
-        console.log('Summarizer API not available:', e)
+        console.log('[AI] Summarizer check failed:', e)
       }
-    }
-
-    // Check Translator API
-    if ('translation' in window) {
-      try {
-        capabilities.translator = await (window as any).translation.canTranslate({
-          sourceLanguage: 'en',
-          targetLanguage: 'ja'
-        }) === 'readily'
-      } catch (e) {
-        console.log('Translator API not available:', e)
-      }
+    } else {
+      console.log('[AI] Summarizer API not found')
     }
 
     // Check Writer API
-    if ('ai' in window && 'writer' in (window as any).ai) {
+    console.log('[AI] Checking Writer API...')
+    if (apiAccess.writer) {
       try {
-        const status = await (window as any).ai.writer.capabilities()
-        capabilities.writer = status.available === 'readily'
+        let availability
+        if (typeof apiAccess.writer.capabilities === 'function') {
+          const caps = await apiAccess.writer.capabilities()
+          availability = caps.available
+        } else if (typeof apiAccess.writer.availability === 'function') {
+          availability = await apiAccess.writer.availability()
+        }
+        
+        console.log('[AI] Writer availability:', availability)
+        capabilities.writer = availability === 'readily' || availability === 'after-download' || availability === 'available'
+        console.log('[AI] Writer ready:', capabilities.writer)
       } catch (e) {
-        console.log('Writer API not available:', e)
+        console.log('[AI] Writer check failed:', e)
       }
+    } else {
+      console.log('[AI] Writer API not found')
     }
 
+    console.log('[AI] Final capabilities:', capabilities)
     return capabilities
   } catch (error) {
     console.error('Error checking AI capabilities:', error)
@@ -232,79 +298,136 @@ export async function checkAICapabilities(): Promise<AICapabilities> {
   }
 }
 
+// Unified API Wrapper Functions
+async function createLanguageModelSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.languageModel) {
+    throw new Error('LanguageModel API not available')
+  }
+  
+  // Handle different API interfaces
+  if (typeof apiAccess.languageModel.create === 'function') {
+    return await apiAccess.languageModel.create(options)
+  }
+  
+  throw new Error('LanguageModel.create method not found')
+}
+
+async function createSummarizerSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.summarizer) {
+    throw new Error('Summarizer API not available')
+  }
+  
+  if (typeof apiAccess.summarizer.create === 'function') {
+    return await apiAccess.summarizer.create(options)
+  }
+  
+  throw new Error('Summarizer.create method not found')
+}
+
+async function createWriterSession(options: any = {}) {
+  const apiAccess = getAIAPIAccess()
+  if (!apiAccess.writer) {
+    throw new Error('Writer API not available')
+  }
+  
+  if (typeof apiAccess.writer.create === 'function') {
+    return await apiAccess.writer.create(options)
+  }
+  
+  throw new Error('Writer.create method not found')
+}
+
 // Chrome Built-in AI Implementation
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
   let session: any = null
   let summarizer: any = null
-  let translator: any = null
   
   try {
+    console.log('[AI] simplifyTextAI called with level:', settings.level)
+    console.log('[AI] Text to simplify (first 100 chars):', text.substring(0, 100))
+    
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
-    if (capabilities.languageModel) {
-      // Use Prompt API for text simplification
-      session = await (window as any).ai.languageModel.create({
-        systemPrompt: buildSimplificationPrompt(settings.level),
-        temperature: 0.7,
-        topK: 3
-      })
-
-      const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
-
-      let summary = ''
-      if (capabilities.summarizer) {
-        try {
-          // Use Summarizer API for summary
-          summarizer = await (window as any).ai.summarizer.create({
-            type: 'tl;dr',
-            format: 'plain-text',
-            length: 'short'
-          })
-          summary = await summarizer.summarize(simplified)
-        } catch (summaryError) {
-          console.warn('Summarizer failed, using fallback:', summaryError)
-          summary = simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified
-        }
+    if (!capabilities.languageModel) {
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (Object.keys(apiAccess).length === 0) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
       }
+    }
 
-      let translation = ''
-      if (capabilities.translator && settings.outputLanguage === 'ja') {
-        try {
-          // Use Translator API for Japanese translation
-          translator = await (window as any).translation.createTranslator({
-            sourceLanguage: 'en',
-            targetLanguage: 'ja'
-          })
-          translation = await translator.translate(simplified)
-        } catch (translationError) {
-          console.warn('Translation failed:', translationError)
-          translation = `[翻訳] ${simplified}`
-        }
-      }
+    console.log('[AI] Creating LanguageModel session...')
+    // Use unified API wrapper for text simplification
+    session = await createLanguageModelSession({
+      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
+      temperature: 0.7,
+      topK: 40
+    })
+    console.log('[AI] Session created successfully')
 
-      return {
-        simplified: simplified.trim(),
-        summary: summary || (simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified),
-        originalText: text,
-        translation: translation || undefined
+    console.log('[AI] Sending prompt to AI model...')
+    const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
+    console.log('[AI] Received simplified text (first 100 chars):', simplified.substring(0, 100))
+
+    let summary = ''
+    if (capabilities.summarizer) {
+      try {
+        console.log('[AI] Creating Summarizer session...')
+        // Use unified API wrapper for summary
+        summarizer = await createSummarizerSession({
+          type: 'tl;dr',
+          format: 'plain-text',
+          length: 'short'
+        })
+        console.log('[AI] Generating summary...')
+        summary = await summarizer.summarize(simplified)
+        console.log('[AI] Summary generated:', summary)
+      } catch (summaryError) {
+        console.warn('[AI] Summarizer failed, using simple truncation:', summaryError)
+        summary = simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified
       }
     } else {
-      // Fallback to local simplification
-      return simplifyText(text, settings)
+      // Simple truncation for summary if summarizer not available
+      summary = simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified
+    }
+
+    console.log('[AI] Simplification complete (AI-powered)')
+    return {
+      simplified: simplified.trim(),
+      summary: summary || (simplified.length > 60 ? simplified.substring(0, 57) + '...' : simplified),
+      originalText: text
     }
   } catch (error) {
     console.error('AI simplification error:', error)
-    // Fallback to local simplification
-    return {
-      ...simplifyText(text, settings),
-      summary: `Error: ${error instanceof Error ? error.message : 'AI processing failed'}`
+    
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
+      }
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+      }
     }
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
     // Cleanup resources
     try {
       if (session) session.destroy()
       if (summarizer) summarizer.destroy()
-      if (translator) translator.destroy()
     } catch (cleanupError) {
       console.warn('Resource cleanup error:', cleanupError)
     }
@@ -312,143 +435,209 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
 }
 
 export async function generateQuizAI(text: string, settings: UserSettings): Promise<QuizResponse> {
+  let session: any = null
+  
   try {
+    console.log('[AI] generateQuizAI called with level:', settings.level)
+    console.log('[AI] Text for quiz (first 100 chars):', text.substring(0, 100))
+    
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
-    if (capabilities.writer) {
-      // Use Writer API for quiz generation
-      const session = await (window as any).ai.writer.create({
-        format: 'plain-text',
-        tone: 'educational',
-        length: 'medium'
-      })
-
-      const prompt = buildQuizPrompt(text, settings.level)
-      const quizText = await session.write(prompt)
-      session.destroy()
-
-      // Parse the generated quiz text into structured questions
-      const questions = parseQuizText(quizText, settings.level)
-      
-      return {
-        questions,
-        originalText: text
+    if (!capabilities.writer) {
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (!apiAccess.writer) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
       }
-    } else {
-      // Fallback to local quiz generation
-      return generateQuizLocal(text, settings)
+    }
+
+    console.log('[AI] Creating Writer session for quiz generation...')
+    // Use unified API wrapper for quiz generation
+    session = await createWriterSession({
+      format: 'plain-text',
+      tone: 'formal'
+    })
+    console.log('[AI] Writer session created')
+
+    const prompt = buildQuizPrompt(text, settings.level)
+    console.log('[AI] Sending quiz prompt to Writer API...')
+    const quizText = await session.write(prompt)
+    console.log('[AI] Quiz text received:', quizText)
+
+    // Parse the generated quiz text into structured questions
+    console.log('[AI] Parsing quiz text into questions...')
+    const questions = parseQuizText(quizText, settings.level)
+    console.log('[AI] Parsed questions:', questions.length)
+    
+    if (questions.length === 0) {
+      throw new Error('Failed to generate quiz questions. Please try with a different text.')
+    }
+    
+    return {
+      questions,
+      originalText: text
     }
   } catch (error) {
     console.error('AI quiz generation error:', error)
-    // Fallback to local quiz generation
-    return generateQuizLocal(text, settings)
-  }
-}
-
-export async function translateTextAI(text: string, settings: UserSettings): Promise<TranslationResponse> {
-  try {
-    const capabilities = await checkAICapabilities()
     
-    if (capabilities.translator && settings.outputLanguage === 'ja') {
-      // Use Translator API
-      const translator = await (window as any).translation.createTranslator({
-        sourceLanguage: 'en',
-        targetLanguage: 'ja'
-      })
-      
-      const translatedText = await translator.translate(text)
-      translator.destroy()
-
-      return {
-        translatedText,
-        originalText: text,
-        sourceLanguage: 'en',
-        targetLanguage: 'ja'
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
       }
-    } else {
-      // Fallback to local translation stub
-      return {
-        translatedText: `[翻訳] ${text}`,
-        originalText: text,
-        sourceLanguage: 'en',
-        targetLanguage: settings.outputLanguage
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
       }
     }
-  } catch (error) {
-    console.error('AI translation error:', error)
-    return {
-      translatedText: `[翻訳エラー] ${text}`,
-      originalText: text,
-      sourceLanguage: 'en',
-      targetLanguage: settings.outputLanguage
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+  } finally {
+    // Cleanup resources
+    try {
+      if (session) session.destroy()
+    } catch (cleanupError) {
+      console.warn('Resource cleanup error:', cleanupError)
     }
   }
 }
 
 export async function simplifyCaptionsAI(lines: CaptionLine[], settings: UserSettings): Promise<SimplifiedCaptionLine[]> {
+  let session: any = null
+  
   try {
+    console.log('[AI] simplifyCaptionsAI called with', lines.length, 'caption lines')
+    console.log('[AI] CEFR level:', settings.level)
+    
+    const chromeVersion = getChromeVersion()
     const capabilities = await checkAICapabilities()
     
-    if (capabilities.languageModel) {
-      const session = await (window as any).ai.languageModel.create({
-        systemPrompt: buildSimplificationPrompt(settings.level),
-        temperature: 0.7,
-        topK: 3
-      })
-
-      const simplifiedLines = await Promise.all(
-        lines.map(async (line) => {
-          if (line.text.trim().length < 8 || /\[Music\]/i.test(line.text)) {
-            return {
-              tStart: line.tStart,
-              tEnd: line.tEnd,
-              original: line.text,
-              simplified: line.text
-            }
-          }
-
-          try {
-            const simplified = await session.prompt(`Simplify: "${line.text}"`)
-            return {
-              tStart: line.tStart,
-              tEnd: line.tEnd,
-              original: line.text,
-              simplified: simplified.trim()
-            }
-          } catch (error) {
-            return {
-              tStart: line.tStart,
-              tEnd: line.tEnd,
-              original: line.text,
-              simplified: line.text
-            }
-          }
-        })
-      )
-
-      session.destroy()
-      return simplifiedLines
-    } else {
-      // Fallback to local simplification
-      return simplifyCaptions(lines, settings)
+    if (!capabilities.languageModel) {
+      // Provide enhanced error message based on likely cause
+      const apiAccess = getAIAPIAccess()
+      if (Object.keys(apiAccess).length === 0) {
+        throw new Error(getAIErrorMessage('api-unavailable', chromeVersion))
+      } else {
+        throw new Error(getAIErrorMessage('flags-disabled', chromeVersion))
+      }
     }
+
+    console.log('[AI] Creating LanguageModel session for captions...')
+    session = await createLanguageModelSession({
+      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
+      temperature: 0.7,
+      topK: 40
+    })
+    console.log('[AI] Caption session created')
+
+    console.log('[AI] Processing', lines.length, 'caption lines...')
+    const simplifiedLines = await Promise.all(
+      lines.map(async (line, index) => {
+        if (line.text.trim().length < 8 || /\[Music\]/i.test(line.text)) {
+          console.log(`[AI] Skipping caption ${index + 1} (too short or music)`)
+          return {
+            tStart: line.tStart,
+            tEnd: line.tEnd,
+            original: line.text,
+            simplified: line.text
+          }
+        }
+
+        try {
+          console.log(`[AI] Simplifying caption ${index + 1}/${lines.length}:`, line.text.substring(0, 50))
+          const simplified = await session.prompt(`Simplify: "${line.text}"`)
+          console.log(`[AI] Caption ${index + 1} simplified:`, simplified.substring(0, 50))
+          return {
+            tStart: line.tStart,
+            tEnd: line.tEnd,
+            original: line.text,
+            simplified: simplified.trim()
+          }
+        } catch (error) {
+          console.error(`[AI] Error simplifying caption ${index + 1}:`, error)
+          // Return original text for individual caption errors
+          return {
+            tStart: line.tStart,
+            tEnd: line.tEnd,
+            original: line.text,
+            simplified: line.text
+          }
+        }
+      })
+    )
+
+    console.log('[AI] All captions processed')
+    return simplifiedLines
   } catch (error) {
     console.error('AI caption simplification error:', error)
-    return simplifyCaptions(lines, settings)
+    
+    // Enhanced error handling with specific guidance
+    if (error instanceof Error) {
+      // If it's already an enhanced error message, pass it through
+      if (error.message.includes('Setup Instructions:')) {
+        throw error
+      }
+      
+      // Provide specific error guidance based on error type
+      if (error.message.includes('user activation')) {
+        throw new Error(getAIErrorMessage('activation-required', getChromeVersion()))
+      } else if (error.message.includes('download') || error.message.includes('model')) {
+        throw new Error(getAIErrorMessage('download-required', getChromeVersion()))
+      } else {
+        throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+      }
+    }
+    
+    throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
+  } finally {
+    // Cleanup resources
+    try {
+      if (session) session.destroy()
+    } catch (cleanupError) {
+      console.warn('Resource cleanup error:', cleanupError)
+    }
   }
 }
 
 // Helper functions for AI prompts
 function buildSimplificationPrompt(level: CEFRLevel): string {
   const levelDescriptions = {
-    A1: 'very simple words, short sentences, present tense',
-    A2: 'basic vocabulary, simple grammar, common topics',
-    B1: 'everyday vocabulary, clear structure, past/future tenses',
-    B2: 'abstract concepts, complex sentences, varied vocabulary',
-    C1: 'sophisticated language, nuanced meaning, idioms'
+    A1: 'VERY simple words only (cat, run, happy), ONLY present tense, sentences under 8 words, NO difficult vocabulary',
+    A2: 'basic everyday words (house, work, friend), simple past/future, sentences under 12 words, common expressions only',
+    B1: 'clear everyday vocabulary, standard grammar, sentences under 15 words, avoid complex structures',
+    B2: 'varied vocabulary including abstract terms, complex sentences allowed, natural expression',
+    C1: 'sophisticated vocabulary, nuanced expressions, idioms acceptable, flexible structures'
   }
 
-  return `You are a language learning assistant. Simplify text to ${level} CEFR level using ${levelDescriptions[level]}. Keep the original meaning but make it appropriate for ${level} learners. Use shorter sentences and simpler words.`
+  const maxWords = {
+    A1: 8,
+    A2: 12,
+    B1: 15,
+    B2: 20,
+    C1: 25
+  }
+
+  return `You are a strict language level adjuster. Simplify text to EXACTLY ${level} CEFR level.
+
+CRITICAL RULES FOR ${level}:
+- Use ${levelDescriptions[level]}
+- Maximum sentence length: ${maxWords[level]} words
+- Keep EXACT same meaning as original
+- Return ONLY the simplified text, nothing else
+- Do NOT add explanations or meta-commentary
+- Preserve all punctuation appropriately
+- Use natural, correct English
+
+Original meaning must be preserved completely. Just adjust the language level.`
 }
 
 function buildQuizPrompt(text: string, level: CEFRLevel): string {
@@ -492,22 +681,4 @@ function parseQuizText(quizText: string, level: CEFRLevel): QuizQuestion[] {
   return questions.slice(0, 3) // Limit to 3 questions
 }
 
-function generateQuizLocal(text: string, settings: UserSettings): QuizResponse {
-  // Simple fallback quiz generator
-  const questions: QuizQuestion[] = [
-    {
-      id: 'q1',
-      question: `What is the main topic of this ${settings.level} level text?`,
-      options: [
-        'The text content',
-        'Language learning',
-        'Something else',
-        'Not sure'
-      ],
-      correctAnswer: 0,
-      explanation: 'This question tests basic comprehension.'
-    }
-  ]
-  
-  return { questions, originalText: text }
-}
+// generateQuizLocal removed - extension now requires Chrome's built-in AI Writer API

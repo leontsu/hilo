@@ -2,28 +2,27 @@ import {
   simplifyTextAI, 
   simplifyCaptionsAI, 
   generateQuizAI, 
-  translateTextAI,
   checkAICapabilities
 } from '../lib/ai'
-import { getSettings } from '../lib/storage'
+import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
 import { 
   validateTextInput, 
   validateSettings, 
   checkRateLimit, 
-  sanitizeText 
+  sanitizeText,
+  decodeHtmlEntities 
 } from '../lib/validation'
 import type { 
   MessageRequest, 
   MessageResponse, 
   SimplificationRequest, 
   CaptionSimplificationRequest,
-  QuizRequest,
-  TranslationRequest
+  QuizRequest
 } from '../types'
 
 // Handle installation
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('LevelLens extension installed')
+  console.log('Hilo extension installed')
 })
 
 // Handle messages from content scripts
@@ -32,14 +31,21 @@ chrome.runtime.onMessage.addListener((
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: MessageResponse) => void
 ) => {
+  console.log('Hilo Background: Received message:', request.type, request)
+  
   handleMessage(request, sender)
-    .then(response => sendResponse(response))
+    .then(response => {
+      console.log('Hilo Background: Sending response:', response)
+      sendResponse(response)
+    })
     .catch(error => {
       console.error('Background message error:', error)
-      sendResponse({
+      const errorResponse = {
         success: false,
         error: error.message || 'Unknown error occurred'
-      })
+      }
+      console.log('Hilo Background: Sending error response:', errorResponse)
+      sendResponse(errorResponse)
     })
   
   // Return true to indicate async response
@@ -48,13 +54,21 @@ chrome.runtime.onMessage.addListener((
 
 async function handleMessage(
   request: MessageRequest,
-  sender: chrome.runtime.MessageSender
+  _sender: chrome.runtime.MessageSender
 ): Promise<MessageResponse> {
   try {
     // Get current user settings
     const settings = await getSettings()
     
-    // Check if extension is enabled
+    // Allow GET_SETTINGS even when extension is disabled
+    if (request.type === 'GET_SETTINGS') {
+      return {
+        success: true,
+        data: settings
+      }
+    }
+    
+    // Check if extension is enabled for other requests
     if (!settings.enabled) {
       return {
         success: false,
@@ -72,11 +86,12 @@ async function handleMessage(
       case 'GENERATE_QUIZ':
         return await handleQuizGeneration(request as QuizRequest)
       
-      case 'TRANSLATE_TEXT':
-        return await handleTranslation(request as TranslationRequest)
-      
       case 'CHECK_AI_CAPABILITIES':
         return await handleAICapabilityCheck()
+      
+      case 'ADJUST_PAGE':
+        // Page adjustments are handled directly by content script
+        return { success: true, data: { message: 'Page adjustment request acknowledged' } }
       
       default:
         return {
@@ -132,6 +147,18 @@ async function handleTextSimplification(
     // Simplify the text using AI
     const result = await simplifyTextAI(sanitizedText, settings)
     
+    // Decode HTML entities in the simplified text
+    if (result.simplified) {
+      result.simplified = decodeHtmlEntities(result.simplified)
+    }
+    if (result.summary) {
+      result.summary = decodeHtmlEntities(result.summary)
+    }
+    
+    // Track usage statistics
+    const wordCount = sanitizedText.split(/\s+/).filter(word => word.length > 0).length
+    await incrementSimplification(wordCount)
+    
     return {
       success: true,
       data: result
@@ -178,7 +205,7 @@ async function handleCaptionSimplification(
 }
 
 // Handle tab updates to inject content scripts if needed
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     // Only inject on supported URLs
     if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
@@ -206,6 +233,9 @@ async function handleQuizGeneration(
     // Generate quiz using AI
     const result = await generateQuizAI(request.text, settings)
     
+    // Track usage statistics
+    await incrementQuiz()
+    
     return {
       success: true,
       data: result
@@ -215,38 +245,6 @@ async function handleQuizGeneration(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Quiz generation failed'
-    }
-  }
-}
-
-async function handleTranslation(
-  request: TranslationRequest
-): Promise<MessageResponse> {
-  try {
-    // Get current settings (override with request settings if provided)
-    const currentSettings = await getSettings()
-    const settings = { ...currentSettings, ...request.settings }
-    
-    // Validate input
-    if (!request.text || request.text.trim().length === 0) {
-      return {
-        success: false,
-        error: 'No text provided for translation'
-      }
-    }
-
-    // Translate text using AI
-    const result = await translateTextAI(request.text, settings)
-    
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Translation error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Translation failed'
     }
   }
 }
@@ -268,18 +266,22 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
   }
 }
 
+
 // Handle storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync') {
+    console.log('Hilo: Storage changed, broadcasting to all tabs:', changes)
     // Broadcast settings changes to all tabs
     chrome.tabs.query({}, (tabs) => {
+      console.log(`Hilo: Broadcasting SETTINGS_CHANGED to ${tabs.length} tabs`)
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
             type: 'SETTINGS_CHANGED',
             changes
-          }).catch(() => {
+          }).catch((error) => {
             // Ignore errors for tabs that don't have content scripts
+            console.log(`Hilo: Could not send message to tab ${tab.id}:`, error.message)
           })
         }
       })
