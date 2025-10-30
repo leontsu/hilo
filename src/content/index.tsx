@@ -22,7 +22,7 @@ interface SimplificationOverlay {
 }
 
 class HiloContentScript {
-  private shadowRoot: ShadowRoot | null = null
+  private shadowRoot: HTMLElement | null = null
   private toolbarRoot: any = null
   private activeOverlays: Map<string, SimplificationOverlay> = new Map()
   private settings: UserSettings = { level: 'B1', enabled: true }
@@ -84,55 +84,67 @@ class HiloContentScript {
   }
 
   private createShadowContainer() {
-    // Create container for Shadow DOM
+    // Create container (NO Shadow DOM for better compatibility)
     const container = document.createElement('div')
     container.id = 'levellens-container'
-    container.style.cssText = 'position: fixed; top: 0; left: 0; z-index: 2147483647; pointer-events: none;'
+    container.style.cssText = `
+      position: fixed !important; 
+      top: 0 !important; 
+      left: 0 !important; 
+      width: 100vw !important; 
+      height: 100vh !important; 
+      z-index: 2147483647 !important; 
+      pointer-events: none !important;
+    `
     
-    // Create Shadow DOM
-    this.shadowRoot = container.attachShadow({ mode: 'open' })
+    // DON'T use Shadow DOM - create normal container
+    this.shadowRoot = container // Just use the container directly
     
-    // Add styles to Shadow DOM
-    const style = document.createElement('style')
-    style.textContent = `
-      .ll-toolbar {
-        position: absolute;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        padding: 8px;
-        display: flex;
-        gap: 8px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 14px;
-        z-index: 10000;
-        pointer-events: auto;
-      }
-      
-      .ll-toolbar button {
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 6px 12px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        white-space: nowrap;
-      }
-      
-      .ll-toolbar button:hover {
-        background: #0056b3;
-      }
-      
-      .ll-toolbar button.secondary {
-        background: #6c757d;
-      }
-      
-      .ll-toolbar button.secondary:hover {
-        background: #545b62;
-      }
+    // Add styles directly to document head
+    if (!document.getElementById('hilo-styles')) {
+      const style = document.createElement('style')
+      style.id = 'hilo-styles'
+      style.textContent = `
+        #levellens-container .ll-toolbar {
+          position: absolute !important;
+          background: #fff !important;
+          border: 1px solid #ddd !important;
+          border-radius: 6px !important;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+          padding: 8px !important;
+          display: flex !important;
+          gap: 8px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          font-size: 14px !important;
+          z-index: 2147483647 !important;
+          pointer-events: auto !important;
+        }
+        
+        #levellens-container .ll-toolbar button {
+          background: #007bff !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 4px !important;
+          padding: 6px 12px !important;
+          cursor: pointer !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+          white-space: nowrap !important;
+          pointer-events: auto !important;
+          z-index: 2147483648 !important;
+        }
+        
+        #levellens-container .ll-toolbar button:hover {
+          background: #0056b3 !important;
+        }
+        
+        #levellens-container .ll-toolbar button.secondary {
+          background: #6c757d !important;
+        }
+        
+        #levellens-container .ll-toolbar button.secondary:hover {
+          background: #545b62 !important;
+        }
       
       .ll-overlay {
         position: absolute;
@@ -194,12 +206,13 @@ class HiloContentScript {
           transform: translateX(0);
         }
       }
-    `
-    this.shadowRoot.appendChild(style)
+      `
+      document.head.appendChild(style)
+    }
     
     // Create toolbar container
     const toolbarContainer = document.createElement('div')
-    this.shadowRoot.appendChild(toolbarContainer)
+    container.appendChild(toolbarContainer)
     
     // Create React root for toolbar
     this.toolbarRoot = createRoot(toolbarContainer)
@@ -237,14 +250,19 @@ class HiloContentScript {
   }
 
   private handleTextSelection() {
+    console.log('[Hilo] handleTextSelection called')
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) {
+      console.log('[Hilo] No selection found, hiding toolbar')
       this.hideToolbar()
       return
     }
 
     const selectedText = selection.toString().trim()
+    console.log('[Hilo] Selected text:', selectedText, 'Length:', selectedText.length)
+    
     if (selectedText.length < MIN_TEXT_LENGTH) {
+      console.log('[Hilo] Text too short, hiding toolbar')
       this.hideToolbar()
       return
     }
@@ -252,6 +270,8 @@ class HiloContentScript {
     // Get selection position
     const range = selection.getRangeAt(0)
     const rect = range.getBoundingClientRect()
+    
+    console.log('[Hilo] Showing toolbar at position:', { x: rect.left + rect.width / 2, y: rect.top - 50 })
     
     this.showToolbar({
       visible: true,
@@ -1189,7 +1209,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   const showQuiz = aiCapabilities.writer || state.selectedText.length > 50
 
-  console.log('Hilo Toolbar: Rendering with settings.level =', settings.level)
+  console.log('Hilo Toolbar: Rendering with:', {
+    level: settings.level,
+    aiCapabilities,
+    selectedTextLength: state.selectedText.length,
+    showQuiz
+  })
 
   return (
     <div 
