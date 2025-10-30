@@ -35,29 +35,6 @@ export interface SimplificationResponse {
   translation?: string
 }
 
-export interface CaptionSimplificationRequest {
-  type: 'SIMPLIFY_CAPTIONS'
-  lines: CaptionLine[]
-  settings: UserSettings
-}
-
-export interface CaptionLine {
-  tStart: number
-  tEnd: number
-  text: string
-}
-
-export interface CaptionSimplificationResponse {
-  lines: SimplifiedCaptionLine[]
-}
-
-export interface SimplifiedCaptionLine {
-  tStart: number
-  tEnd: number
-  original: string
-  simplified: string
-}
-
 // Quiz types
 export interface QuizQuestion {
   id: string
@@ -160,7 +137,6 @@ declare global {
 export type MessageRequest = 
   | SimplificationRequest 
   | PageAdjustmentRequest
-  | CaptionSimplificationRequest
   | QuizRequest
   | TranslationRequest
   | AICapabilityRequest
@@ -168,6 +144,6 @@ export type MessageRequest =
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | CaptionSimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | { message: string, settings?: UserSettings }
+  data?: SimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | { message: string, settings?: UserSettings }
   error?: string
 }

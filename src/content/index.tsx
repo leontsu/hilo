@@ -34,12 +34,6 @@ class HiloContentScript {
   }
 
   private async init() {
-    // Don't initialize on YouTube (handled by separate script)
-    if (window.location.hostname.includes('youtube.com')) {
-      console.log('Hilo: Skipping initialization on YouTube')
-      return
-    }
-
     console.log('Hilo: Starting content script initialization...')
 
     // Load settings and check AI capabilities

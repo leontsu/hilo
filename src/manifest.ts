@@ -28,11 +28,6 @@ export default defineManifest({
       js: ['src/content/index.tsx'],
       css: ['src/content/styles.css'],
       run_at: 'document_idle'
-    },
-    {
-      matches: ['*://*.youtube.com/*'],
-      js: ['src/content/youtube.ts'],
-      run_at: 'document_idle'
     }
   ],
   

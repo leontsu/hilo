@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue)
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow)
 
-**Hilo** is a Chrome extension that adapts web content and YouTube captions to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
+**Hilo** is a Chrome extension that adapts web content to your language learning level (CEFR A1-C1), making the internet more accessible for language learners.
 
 > **⚠️ IMPORTANT REQUIREMENTS**:
 > 1. **Chrome Canary/Dev Required**: This extension requires Chrome's experimental Built-in AI APIs, only available in Chrome Canary or Chrome Dev
@@ -20,11 +20,9 @@ Hilo uses Chrome's on-device Built-in AI APIs for privacy-respecting, context-aw
 
 ### Core Functionality
 - **Text Simplification**: Select any text on web pages (8+ characters) to get AI-powered simplified versions
-- **YouTube Caption Adaptation**: Native caption integration with real-time simplification and caching
 - **Interactive Quizzes**: Generate comprehension quizzes based on simplified text to test understanding
 - **CEFR Level Support**: Choose from A1 (Beginner) to C1 (Advanced) complexity levels
 - **Chrome Built-in AI Powered**: Leverages Chrome's on-device AI for context-aware, privacy-respecting simplification
-- **Performance Optimized**: Smart caption caching prevents redundant processing
 
 ### User Experience
 - **Shadow DOM Integration**: No interference with existing page styles
@@ -93,13 +91,6 @@ Then load the extension from the `dist` folder as described above. Changes will 
 4. **Generate Quiz** (Optional): Test your comprehension with AI-generated quiz questions
 5. **Clear Overlays**: Use the "Clear" button to remove all simplifications
 
-### YouTube
-1. **Visit YouTube**: Navigate to any YouTube video with captions
-2. **Enable Hilo**: Click the toggle button that appears on the video player
-3. **Native Caption Integration**: Hilo directly replaces YouTube's captions with simplified versions
-4. **Smart Caching**: Previously simplified captions are cached for instant display
-5. **Real-time Adaptation**: Captions adapt to your selected CEFR level on-the-fly
-
 ### Settings
 - **Access Settings**: Click the Hilo icon in Chrome's toolbar
 - **Choose Level**: Select your CEFR level (A1-C1)
@@ -130,7 +121,6 @@ hilo/
 │   │   └── index.ts         # Service worker for message handling
 │   ├── content/
 │   │   ├── index.tsx        # Main content script with React
-│   │   ├── youtube.ts       # YouTube caption integration with caching
 │   │   └── styles.css       # Content script styles
 │   ├── ui/
 │   │   ├── popup.tsx        # Extension popup with statistics
@@ -169,7 +159,7 @@ hilo/
 ### Current AI Implementation Status
 
 **✅ Implemented & Active:**
-- **Language Model API** (`globalThis.LanguageModel`) - Powers text and caption simplification
+- **Language Model API** (`globalThis.LanguageModel`) - Powers text simplification
 - **Summarizer API** (`globalThis.Summarizer`) - Generates text summaries
 - **Writer API** (`globalThis.Writer`) - Generates comprehension quizzes
 - **Capability Detection** - Automatically checks which AI APIs are available
@@ -220,20 +210,18 @@ hilo/
 - **Interactive Learning**: AI-generated quizzes test your comprehension
 
 **⚡ Performance:**
-- YouTube caption caching reduces redundant API calls
 - Smart session management and resource cleanup
 - All settings automatically saved and synced via Chrome Storage
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing Checklist
 1. **AI Setup**: Verify Chrome Built-in AI is enabled and models are downloaded
 2. **Text Selection**: Verify toolbar appears for 8+ character selections
 3. **Simplification**: Confirm text is simplified according to CEFR level
 4. **Quiz Generation**: Test comprehension quiz feature on simplified text
-5. **YouTube Integration**: Test caption simplification with EASY toggle
-6. **Settings Persistence**: Verify settings save and sync across browser sessions
-7. **Responsive Design**: Test on different screen sizes and zoom levels
+5. **Settings Persistence**: Verify settings save and sync across browser sessions
+6. **Responsive Design**: Test on different screen sizes and zoom levels
 
 ### Browser Compatibility
 - **Chrome Canary** (version 127+) - Required for Built-in AI APIs
@@ -291,10 +279,9 @@ SOFTWARE.
 - [x] Chrome Built-in AI integration (Language Model, Summarizer, Writer APIs)
 - [x] AI-powered text simplification with context awareness
 - [x] Comprehension quiz generation using Writer API
-- [x] YouTube native caption integration with caching
 - [x] CEFR level configuration (A1-C1)
 - [x] Chrome storage integration with sync
-- [x] Performance optimizations (caption caching, session management)
+- [x] Performance optimizations and session management
 - [x] Usage statistics tracking
 - [x] AI capability detection and error handling
 
@@ -303,7 +290,6 @@ SOFTWARE.
 - [ ] Custom vocabulary lists and word tracking
 - [ ] Learning progress analytics
 - [ ] Export/import settings and progress data
-- [ ] Improved caption timing and synchronization
 
 ### Phase 3 (Future 🎯)
 - [ ] Multi-language support expansion (beyond English)
@@ -321,7 +307,6 @@ Hilo was inspired by the need to make web content accessible to language learner
 
 - **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/leontsu/hilo/issues)
 - **Documentation**: Check our documentation files for detailed guides:
-  - [YOUTUBE_CAPTION_IMPROVEMENTS.md](YOUTUBE_CAPTION_IMPROVEMENTS.md) - YouTube feature details
   - [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) - Performance optimization guide
   - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
 - **Community**: Join discussions in [GitHub Discussions](https://github.com/leontsu/hilo/discussions)
