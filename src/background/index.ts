@@ -4,7 +4,13 @@ import {
   checkAICapabilities,
   getCacheStats
 } from '../lib/ai'
-import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
+import { 
+  getSettings, 
+  incrementSimplification, 
+  incrementQuiz,
+  saveTestResult 
+} from '../lib/storage'
+import { cefrTestEngine } from '../lib/cefrTestEngine'
 import { 
   validateTextInput, 
   validateSettings, 
@@ -16,7 +22,10 @@ import type {
   MessageRequest, 
   MessageResponse, 
   SimplificationRequest, 
-  QuizRequest
+  QuizRequest,
+  SubmitCEFRTestAnswerRequest,
+  GetNextCEFRQuestionRequest,
+  FinalizeCEFRTestRequest
 } from '../types'
 
 // Handle installation
@@ -94,6 +103,18 @@ async function handleMessage(
           success: true,
           data: getCacheStats()
         }
+
+      case 'START_CEFR_TEST':
+        return await handleStartCEFRTest()
+
+      case 'SUBMIT_CEFR_TEST_ANSWER':
+        return await handleSubmitCEFRTestAnswer(request as SubmitCEFRTestAnswerRequest)
+
+      case 'GET_NEXT_CEFR_QUESTION':
+        return await handleGetNextCEFRQuestion(request as GetNextCEFRQuestionRequest)
+
+      case 'FINALIZE_CEFR_TEST':
+        return await handleFinalizeCEFRTest(request as FinalizeCEFRTestRequest)
       
       default:
         return {
@@ -236,6 +257,118 @@ async function handleAICapabilityCheck(): Promise<MessageResponse> {
   }
 }
 
+// CEFR Test handlers
+async function handleStartCEFRTest(): Promise<MessageResponse> {
+  try {
+    const session = cefrTestEngine.startTestSession()
+    const currentQuestion = cefrTestEngine.getNextQuestion(session.id)
+    
+    return {
+      success: true,
+      data: {
+        session,
+        currentQuestion: currentQuestion || undefined,
+        isComplete: false
+      }
+    }
+  } catch (error) {
+    console.error('Error starting CEFR test:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to start CEFR test'
+    }
+  }
+}
+
+async function handleSubmitCEFRTestAnswer(request: SubmitCEFRTestAnswerRequest): Promise<MessageResponse> {
+  try {
+    const result = cefrTestEngine.submitAnswer(
+      request.sessionId,
+      request.questionId,
+      request.selectedAnswer,
+      request.timeSpent
+    )
+    
+    let currentQuestion = undefined
+    let testResult = undefined
+    
+    if (!result.isComplete) {
+      const nextQuestion = cefrTestEngine.getNextQuestion(request.sessionId)
+      currentQuestion = nextQuestion || undefined
+    } else {
+      testResult = cefrTestEngine.finalizeTest(request.sessionId)
+      await saveTestResult(testResult)
+    }
+    
+    return {
+      success: true,
+      data: {
+        session: result.session,
+        currentQuestion,
+        isComplete: result.isComplete,
+        result: testResult
+      }
+    }
+  } catch (error) {
+    console.error('Error submitting CEFR test answer:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to submit answer'
+    }
+  }
+}
+
+async function handleGetNextCEFRQuestion(request: GetNextCEFRQuestionRequest): Promise<MessageResponse> {
+  try {
+    const session = cefrTestEngine.getSession(request.sessionId)
+    if (!session) {
+      return {
+        success: false,
+        error: 'Session not found'
+      }
+    }
+    
+    const nextQuestion = cefrTestEngine.getNextQuestion(request.sessionId)
+    
+    return {
+      success: true,
+      data: {
+        session,
+        currentQuestion: nextQuestion || undefined,
+        isComplete: session.completed
+      }
+    }
+  } catch (error) {
+    console.error('Error getting next CEFR question:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get next question'
+    }
+  }
+}
+
+async function handleFinalizeCEFRTest(request: FinalizeCEFRTestRequest): Promise<MessageResponse> {
+  try {
+    const testResult = cefrTestEngine.finalizeTest(request.sessionId)
+    await saveTestResult(testResult)
+    
+    return {
+      success: true,
+      data: {
+        session: undefined as any,
+        currentQuestion: undefined,
+        isComplete: true,
+        result: testResult
+      }
+    }
+  } catch (error) {
+    console.error('Error finalizing CEFR test:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to finalize test'
+    }
+  }
+}
 
 // Handle storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, namespace) => {

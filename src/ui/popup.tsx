@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getSettings, saveSettings, getStatistics } from '../lib/storage'
-import type { CEFRLevel, UserSettings, AICapabilities, UsageStatistics } from '../types'
+import { CEFRTest } from './CEFRTest'
+import type { 
+  CEFRLevel, 
+  UserSettings, 
+  AICapabilities, 
+  UsageStatistics, 
+  CEFRTestResult
+} from '../types'
+import './cefrTest.css'
 
 const CEFR_LEVELS: { value: CEFRLevel; label: string; description: string }[] = [
   { value: 'A1', label: 'A1 - Beginner', description: 'Very simple words and phrases' },
@@ -35,11 +43,14 @@ const PopupApp: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [adjustingPage, setAdjustingPage] = useState(false)
   const [pageAdjustError, setPageAdjustError] = useState<string | null>(null)
+  const [showCEFRTest, setShowCEFRTest] = useState(false)
+  const [checkingFirstTime, setCheckingFirstTime] = useState(true)
 
   useEffect(() => {
     loadSettings()
     checkAICapabilities()
     loadStatistics()
+    checkFirstTimeUser()
   }, [])
 
   const loadSettings = async () => {
@@ -70,6 +81,22 @@ const PopupApp: React.FC = () => {
       setStatistics(currentStats)
     } catch (error) {
       console.error('Error loading statistics:', error)
+    }
+  }
+
+  const checkFirstTimeUser = async () => {
+    try {
+      // Import the storage function dynamically to check if user is first time
+      const { isFirstTimeUser } = await import('../lib/storage')
+      const isFirstTime = await isFirstTimeUser()
+      
+      if (isFirstTime) {
+        setShowCEFRTest(true)
+      }
+    } catch (error) {
+      console.error('Error checking first time user:', error)
+    } finally {
+      setCheckingFirstTime(false)
     }
   }
 
@@ -129,7 +156,36 @@ const PopupApp: React.FC = () => {
     chrome.runtime.openOptionsPage()
   }
 
-  if (loading) {
+  const handleTestComplete = async (result: CEFRTestResult) => {
+    try {
+      // Test completion is already handled by background script
+      // Just need to update UI state and reload settings
+      await loadSettings()
+      setShowCEFRTest(false)
+      
+      console.log(`CEFR Test completed: Level ${result.level}, Confidence: ${Math.round(result.confidence * 100)}%`)
+    } catch (error) {
+      console.error('Error handling test completion:', error)
+    }
+  }
+
+  const handleSkipTest = async () => {
+    try {
+      const { skipInitialTest } = await import('../lib/storage')
+      await skipInitialTest()
+      setShowCEFRTest(false)
+      
+      console.log('CEFR Test skipped')
+    } catch (error) {
+      console.error('Error skipping test:', error)
+    }
+  }
+
+  const retakeTest = () => {
+    setShowCEFRTest(true)
+  }
+
+  if (loading || checkingFirstTime) {
     return (
       <div className="popup-container">
         <header className="popup-header">
@@ -148,6 +204,24 @@ const PopupApp: React.FC = () => {
               <div className="skeleton-item"></div>
             </div>
           </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Show CEFR test for first-time users
+  if (showCEFRTest) {
+    return (
+      <div className="popup-container">
+        <header className="popup-header">
+          <h1>Welcome to Hilo! 👋</h1>
+          <p className="welcome-subtitle">Let's find your English level with a quick 6-question test</p>
+        </header>
+        <main className="popup-main">
+          <CEFRTest 
+            onTestComplete={handleTestComplete}
+            onSkipTest={handleSkipTest}
+          />
         </main>
       </div>
     )
@@ -228,6 +302,13 @@ const PopupApp: React.FC = () => {
           <p className="setting-description">
             {CEFR_LEVELS.find(l => l.value === settings.level)?.description}
           </p>
+          <button 
+            onClick={retakeTest}
+            className="retake-test-button"
+            disabled={saving}
+          >
+Take Level Test
+          </button>
         </div>
 
         <div className="capabilities-section">

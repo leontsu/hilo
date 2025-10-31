@@ -147,12 +147,15 @@ class HiloContentScript {
         border-radius: 8px;
         padding: 12px;
         max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size: 14px;
         line-height: 1.4;
         z-index: 9999;
         pointer-events: auto;
+        cursor: move;
       }
       
       .ll-overlay-header {
@@ -188,6 +191,82 @@ class HiloContentScript {
         font-style: italic;
         border-top: 1px solid #eee;
         padding-top: 8px;
+      }
+      
+      .ll-quiz-overlay {
+        max-width: 500px;
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      
+      .ll-overlay-header {
+        cursor: move;
+        user-select: none;
+        background: rgba(0, 123, 255, 0.1);
+        margin: -12px -12px 12px -12px;
+        padding: 12px;
+        border-radius: 6px 6px 0 0;
+        border-bottom: 1px solid rgba(0, 123, 255, 0.2);
+      }
+      
+      .quiz-question {
+        margin-bottom: 20px;
+        padding: 12px;
+        background: rgba(0, 123, 255, 0.05);
+        border-radius: 6px;
+        border-left: 3px solid #007bff;
+      }
+      
+      .question-text {
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #333;
+      }
+      
+      .option-button {
+        display: block;
+        width: 100%;
+        margin-bottom: 6px;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 13px;
+      }
+      
+      .option-button:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+      }
+      
+      .option-button.selected {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+      
+      .option-button.correct {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+      }
+      
+      .option-button.incorrect {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+      }
+      
+      .question-feedback {
+        margin-top: 10px;
+        padding: 8px;
+        background: rgba(40, 167, 69, 0.1);
+        border-radius: 4px;
+        font-size: 12px;
+        color: #155724;
       }
       
       @keyframes slideInRight {
@@ -449,6 +528,7 @@ class HiloContentScript {
     overlay.innerHTML = `
       <div class="ll-overlay-header">
         <span>Hilo (${this.settings.level}) ${this.aiCapabilities.languageModel ? '🤖' : '📚'} ⚡</span>
+        <span style="font-size: 11px; opacity: 0.7; margin-left: 8px;">Drag to move</span>
         <button class="ll-overlay-close" data-overlay-id="${overlayId}">×</button>
       </div>
       <div class="ll-overlay-content">${data.simplified}</div>
@@ -479,6 +559,12 @@ class HiloContentScript {
       this.removeOverlay(overlayId)
     })
     
+    // Make overlay draggable
+    const header = overlay.querySelector('.ll-overlay-header') as HTMLElement
+    if (header) {
+      this.makeDraggable(overlay, header)
+    }
+    
     document.body.appendChild(overlay)
     
     this.activeOverlays.set(overlayId, {
@@ -496,21 +582,26 @@ class HiloContentScript {
     overlay.className = 'll-overlay ll-quiz-overlay'
     overlay.style.cssText = `
       position: fixed;
-      left: ${Math.min(x, window.innerWidth - 420)}px;
-      top: ${Math.min(y + 60, window.innerHeight - 300)}px;
+      left: ${Math.min(x, window.innerWidth - 520)}px;
+      top: ${Math.min(y + 60, window.innerHeight - 400)}px;
       z-index: 2147483646;
       max-width: 500px;
+      max-height: 70vh;
+      overflow-y: auto;
     `
     
     const overlayId = Date.now().toString()
     
     overlay.innerHTML = `
       <div class="ll-overlay-header">
-        <span>Hilo Quiz (${this.settings.level}) ${this.aiCapabilities.writer ? '🤖' : '📝'} ⚡</span>
+        <span>📝 Hilo Quiz (${this.settings.level}) ${this.aiCapabilities.writer ? '🤖' : '📝'} ⚡</span>
+        <span style="font-size: 11px; opacity: 0.7; margin-left: 8px;">Drag to move</span>
         <button class="ll-overlay-close" data-overlay-id="${overlayId}">×</button>
       </div>
-      <div class="ll-overlay-content">
-        <div class="quiz-intro">Test your understanding of the text:</div>
+      <div class="ll-overlay-content" style="max-height: calc(70vh - 60px); overflow-y: auto; padding-right: 8px;">
+        <div class="quiz-intro" style="margin-bottom: 16px; padding: 8px; background: rgba(0,123,255,0.1); border-radius: 4px; font-size: 13px;">
+          📚 Test your understanding of the text:
+        </div>
         <div class="ll-overlay-quiz">
           ${quizData.questions.map((q, i) => `
             <div class="quiz-question" data-question-id="${q.id}" data-correct="${q.correctAnswer}">
@@ -523,8 +614,8 @@ class HiloContentScript {
                 `).join('')}
               </div>
               <div class="question-feedback" style="display: none;">
-                <div class="correct-answer">Correct answer: ${String.fromCharCode(65 + q.correctAnswer)}</div>
-                ${q.explanation ? `<div class="explanation">${q.explanation}</div>` : ''}
+                <div class="correct-answer">✅ Correct answer: ${String.fromCharCode(65 + q.correctAnswer)}</div>
+                ${q.explanation ? `<div class="explanation">💡 ${q.explanation}</div>` : ''}
               </div>
             </div>
           `).join('')}
@@ -566,6 +657,12 @@ class HiloContentScript {
     overlay.querySelector('.ll-overlay-close')?.addEventListener('click', () => {
       this.removeOverlay(overlayId)
     })
+    
+    // Make quiz overlay draggable
+    const header = overlay.querySelector('.ll-overlay-header') as HTMLElement
+    if (header) {
+      this.makeDraggable(overlay, header)
+    }
     
     document.body.appendChild(overlay)
     
@@ -1240,6 +1337,57 @@ class HiloContentScript {
       notification.style.transition = 'opacity 0.3s ease'
       setTimeout(() => notification.remove(), 300)
     }, delay)
+  }
+
+  private makeDraggable(element: HTMLElement, handle: HTMLElement) {
+    let isDragging = false
+    let startX = 0
+    let startY = 0
+    let startLeft = 0
+    let startTop = 0
+
+    handle.addEventListener('mousedown', (e) => {
+      if ((e.target as HTMLElement).tagName === 'BUTTON') return // Don't drag on close button
+      
+      isDragging = true
+      startX = e.clientX
+      startY = e.clientY
+      
+      const rect = element.getBoundingClientRect()
+      startLeft = rect.left
+      startTop = rect.top
+      
+      handle.style.cursor = 'grabbing'
+      e.preventDefault()
+    })
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return
+      
+      const deltaX = e.clientX - startX
+      const deltaY = e.clientY - startY
+      
+      let newLeft = startLeft + deltaX
+      let newTop = startTop + deltaY
+      
+      // Keep within viewport bounds
+      const rect = element.getBoundingClientRect()
+      const maxLeft = window.innerWidth - rect.width
+      const maxTop = window.innerHeight - rect.height
+      
+      newLeft = Math.max(0, Math.min(newLeft, maxLeft))
+      newTop = Math.max(0, Math.min(newTop, maxTop))
+      
+      element.style.left = `${newLeft}px`
+      element.style.top = `${newTop}px`
+    })
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false
+        handle.style.cursor = 'move'
+      }
+    })
   }
 }
 
