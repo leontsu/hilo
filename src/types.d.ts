@@ -88,6 +88,15 @@ export interface GetSettingsRequest {
   type: 'GET_SETTINGS'
 }
 
+export interface GetCacheStatsRequest {
+  type: 'GET_CACHE_STATS'
+}
+
+export interface CacheStatsResponse {
+  size: number
+  maxSize: number
+}
+
 // Chrome AI API types
 declare global {
   interface Window {
@@ -141,9 +150,10 @@ export type MessageRequest =
   | TranslationRequest
   | AICapabilityRequest
   | GetSettingsRequest
+  | GetCacheStatsRequest
 
 export interface MessageResponse {
   success: boolean
-  data?: SimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | { message: string, settings?: UserSettings }
+  data?: SimplificationResponse | QuizResponse | TranslationResponse | AICapabilityResponse | UserSettings | CacheStatsResponse | { message: string, settings?: UserSettings }
   error?: string
 }

@@ -1,7 +1,8 @@
 import { 
-  simplifyTextAI, 
+  simplifyTextAIFast,
   generateQuizAI, 
-  checkAICapabilities
+  checkAICapabilities,
+  getCacheStats
 } from '../lib/ai'
 import { getSettings, incrementSimplification, incrementQuiz } from '../lib/storage'
 import { 
@@ -88,6 +89,12 @@ async function handleMessage(
         // Page adjustments are handled directly by content script
         return { success: true, data: { message: 'Page adjustment request acknowledged' } }
       
+      case 'GET_CACHE_STATS':
+        return {
+          success: true,
+          data: getCacheStats()
+        }
+      
       default:
         return {
           success: false,
@@ -139,8 +146,8 @@ async function handleTextSimplification(
     const settings = { ...currentSettings, ...request.settings }
     const sanitizedText = sanitizeText(request.text)
 
-    // Simplify the text using AI
-    const result = await simplifyTextAI(sanitizedText, settings)
+    // Simplify the text using fast AI with caching
+    const result = await simplifyTextAIFast(sanitizedText, settings)
     
     // Decode HTML entities in the simplified text
     if (result.simplified) {

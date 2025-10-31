@@ -333,14 +333,16 @@ class HiloContentScript {
     this.showEnhancedLoadingIndicator(x, y, 'Adjusting text level...', 'AI is processing your text')
     
     try {
-      console.log('Hilo: Sending SIMPLIFY_TEXT message to background...')
+      console.log('Hilo: Processing text with optimized AI system...')
       
-      // Send adjustment request to background
-      const response = await chrome.runtime.sendMessage({
-        type: 'SIMPLIFY_TEXT',
-        text: selectedText,
-        settings: this.settings
-      })
+      // Use the faster cached AI processing
+      const { simplifyTextAIFast } = await import('../lib/ai')
+      const result = await simplifyTextAIFast(selectedText, this.settings)
+      
+      const response = {
+        success: true,
+        data: result
+      }
       
       console.log('Hilo: Received response from background:', response)
 
@@ -351,12 +353,12 @@ class HiloContentScript {
         // Show quick success feedback
         this.showQuickSuccessIndicator(x, y)
       } else {
-        console.error('Level adjustment failed:', response.error)
+        console.error('Level adjustment failed')
         // Use enhanced error display for better user guidance
         this.showEnhancedErrorNotification(
           'Text Adjustment Failed',
-          response.error || 'Unable to adjust the selected text. Please try again.',
-          this.detectErrorType(response.error)
+          'Unable to adjust the selected text. Please try again.',
+          'unknown'
         )
       }
     } catch (error) {
@@ -446,7 +448,7 @@ class HiloContentScript {
     
     overlay.innerHTML = `
       <div class="ll-overlay-header">
-        <span>Hilo (${this.settings.level}) ${this.aiCapabilities.languageModel ? '🤖' : '📚'}</span>
+        <span>Hilo (${this.settings.level}) ${this.aiCapabilities.languageModel ? '🤖' : '📚'} ⚡</span>
         <button class="ll-overlay-close" data-overlay-id="${overlayId}">×</button>
       </div>
       <div class="ll-overlay-content">${data.simplified}</div>
@@ -504,7 +506,7 @@ class HiloContentScript {
     
     overlay.innerHTML = `
       <div class="ll-overlay-header">
-        <span>Hilo Quiz (${this.settings.level}) ${this.aiCapabilities.writer ? '🤖' : '📝'}</span>
+        <span>Hilo Quiz (${this.settings.level}) ${this.aiCapabilities.writer ? '🤖' : '📝'} ⚡</span>
         <button class="ll-overlay-close" data-overlay-id="${overlayId}">×</button>
       </div>
       <div class="ll-overlay-content">
@@ -590,8 +592,7 @@ class HiloContentScript {
     let failCount = 0
     
     try {
-      console.log('Starting page level adjustment...')
-      console.log('DEBUG: This is the modified version with AI capability check!')
+      console.log('Starting optimized page level adjustment...')
       
       // Check AI capabilities first
       console.log('Hilo: Checking AI capabilities before page adjustment:', this.aiCapabilities)
@@ -609,10 +610,11 @@ class HiloContentScript {
       // Clear any existing overlays
       this.handleClear()
       
-      // Extract all text nodes from the page
-      const textNodes = this.extractPageTextNodes()
+      // Extract and prioritize text nodes
+      const allTextNodes = this.extractPageTextNodes()
+      const prioritizedNodes = this.prioritizeTextNodes(allTextNodes)
       
-      if (textNodes.length === 0) {
+      if (prioritizedNodes.length === 0) {
         console.log('No text content found on page')
         this.showErrorNotification(
           'No Text Found',
@@ -621,52 +623,49 @@ class HiloContentScript {
         return
       }
 
-      console.log(`Found ${textNodes.length} text nodes to adjust`)
+      console.log(`Found ${prioritizedNodes.length} text nodes to adjust (prioritized by visibility)`)
 
       // Create a progress indicator
-      this.showPageAdjustmentProgress(0, textNodes.length, 'Starting...')
+      this.showPageAdjustmentProgress(0, prioritizedNodes.length, 'Preparing batch processing...')
 
-      // Process text nodes in batches to avoid overwhelming the API
-      let processed = 0
-      for (const node of textNodes) {
-        try {
-          const originalText = node.textContent?.trim() || ''
-          
-          // Skip if text is too short or is just whitespace/punctuation
-          if (originalText.length < MIN_TEXT_LENGTH || /^[\[\](){}.,!?;:\s\-_]*$/.test(originalText)) {
-            processed++
-            continue
-          }
+      // Convert to batch requests
+      const batchRequests = prioritizedNodes.map((nodeInfo, index) => ({
+        id: `node-${index}`,
+        text: nodeInfo.text,
+        priority: nodeInfo.priority,
+        node: nodeInfo.node
+      }))
 
-          // Send adjustment request
-          const response = await chrome.runtime.sendMessage({
-            type: 'SIMPLIFY_TEXT',
-            text: originalText,
-            settings: settings
-          })
-
-          if (response.success && response.data) {
-            // Apply adjustment to the text node
-            this.applyAdjustmentToNode(node, originalText, response.data.simplified)
-            successCount++
-          } else {
-            failCount++
-            console.warn('Failed to adjust node:', response.error)
-          }
-
-          processed++
+      // Process using batch system with progress tracking
+      const { simplifyTextsBatch } = await import('../lib/ai')
+      
+      const results = await simplifyTextsBatch(
+        batchRequests.map(req => ({ id: req.id, text: req.text, priority: req.priority })),
+        settings,
+        (completed, total) => {
           this.showPageAdjustmentProgress(
-            processed, 
-            textNodes.length, 
-            `Processing ${processed}/${textNodes.length}...`
+            completed, 
+            total, 
+            `Processing batch ${completed}/${total}... (AI accelerated)`
           )
+        }
+      )
 
-          // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100))
-        } catch (error) {
-          console.error('Error adjusting text node:', error)
+      // Apply results to DOM
+      for (const result of results) {
+        const requestInfo = batchRequests.find(req => req.id === result.id)
+        if (requestInfo && result.success && result.data) {
+          this.applyAdjustmentToNode(
+            requestInfo.node, 
+            requestInfo.text, 
+            result.data.simplified
+          )
+          successCount++
+        } else {
           failCount++
-          processed++
+          if (result.error) {
+            console.warn('Failed to adjust node:', result.error)
+          }
         }
       }
 
@@ -747,6 +746,71 @@ class HiloContentScript {
     return textNodes
   }
 
+  private prioritizeTextNodes(textNodes: Text[]): Array<{node: Text, text: string, priority: number}> {
+    const prioritizedNodes: Array<{node: Text, text: string, priority: number}> = []
+    
+    for (const node of textNodes) {
+      const text = node.textContent?.trim() || ''
+      if (text.length < MIN_TEXT_LENGTH) continue
+      
+      const parent = node.parentElement
+      if (!parent) continue
+      
+      // Determine priority based on visibility and position
+      let priority = 3 // Default: background priority
+      
+      try {
+        const rect = parent.getBoundingClientRect()
+        const isVisible = rect.width > 0 && rect.height > 0
+        const isInViewport = rect.top < window.innerHeight && rect.bottom > 0
+        
+        if (isVisible && isInViewport) {
+          // High priority: visible and in current viewport
+          priority = 1
+        } else if (isVisible) {
+          // Medium priority: visible but not in current viewport
+          priority = 2
+        }
+        // Low priority (3): not visible or off-screen
+        
+        // Boost priority for important elements
+        const tagName = parent.tagName.toLowerCase()
+        if (['h1', 'h2', 'h3', 'title'].includes(tagName)) {
+          priority = Math.max(1, priority - 1) // Boost by 1 level, minimum 1
+        }
+        
+        // Reduce priority for less important elements
+        if (['footer', 'aside', 'nav'].includes(tagName) || 
+            parent.classList.contains('sidebar') || 
+            parent.classList.contains('footer')) {
+          priority = Math.min(3, priority + 1) // Reduce by 1 level, maximum 3
+        }
+        
+      } catch (error) {
+        // If we can't determine visibility, use medium priority
+        priority = 2
+      }
+      
+      prioritizedNodes.push({
+        node,
+        text,
+        priority
+      })
+    }
+    
+    // Sort by priority (1 = highest, 3 = lowest) then by text length (longer first for same priority)
+    prioritizedNodes.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority
+      }
+      return b.text.length - a.text.length
+    })
+    
+    console.log(`Text nodes prioritized: ${prioritizedNodes.filter(n => n.priority === 1).length} high priority, ${prioritizedNodes.filter(n => n.priority === 2).length} medium priority, ${prioritizedNodes.filter(n => n.priority === 3).length} low priority`)
+    
+    return prioritizedNodes
+  }
+
   private applyAdjustmentToNode(node: Text, originalText: string, adjustedText: string) {
     // Don't modify if texts are the same
     if (originalText === adjustedText) {
@@ -821,7 +885,7 @@ class HiloContentScript {
         font-weight: 600;
         color: #333;
       `
-      title.textContent = '✨ Adjusting Page Level...'
+      title.textContent = '⚡ Hilo AI - Fast Page Adjustment'
       
       const status = document.createElement('div')
       status.id = 'levellens-progress-status'
@@ -904,8 +968,8 @@ class HiloContentScript {
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 24px;">✅</span>
         <div>
-          <div style="font-weight: 600; margin-bottom: 2px;">Success!</div>
-          <div style="font-size: 12px; opacity: 0.95;">${count ? `Adjusted ${count} sections. ` : ''}Click highlighted text to toggle</div>
+          <div style="font-weight: 600; margin-bottom: 2px;">⚡ Fast Processing Complete!</div>
+          <div style="font-size: 12px; opacity: 0.95;">${count ? `Adjusted ${count} sections with AI cache. ` : ''}Click highlighted text to toggle</div>
         </div>
       </div>
     `

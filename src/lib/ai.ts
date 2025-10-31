@@ -7,6 +7,169 @@ import type {
   AICapabilities
 } from '../types'
 
+// Batch processing interfaces
+interface BatchRequest {
+  id: string
+  text: string
+  priority: number // 1 = highest priority (visible), 2 = normal, 3 = background
+}
+
+interface BatchResponse {
+  id: string
+  success: boolean
+  data?: SimplificationResponse
+  error?: string
+}
+
+interface AISessionPool {
+  languageModel: any[]
+  summarizer: any[]
+  writer: any[]
+}
+
+// Cache system for processed texts
+interface CacheEntry {
+  originalText: string
+  level: CEFRLevel
+  simplified: string
+  summary: string
+  timestamp: number
+}
+
+class TextCache {
+  private cache = new Map<string, CacheEntry>()
+  private maxSize = 500
+  private maxAge = 24 * 60 * 60 * 1000 // 24 hours
+
+  private generateKey(text: string, level: CEFRLevel): string {
+    return `${level}:${text.slice(0, 100)}:${text.length}`
+  }
+
+  get(text: string, level: CEFRLevel): CacheEntry | null {
+    const key = this.generateKey(text, level)
+    const entry = this.cache.get(key)
+    
+    if (entry && Date.now() - entry.timestamp < this.maxAge) {
+      return entry
+    }
+    
+    if (entry) {
+      this.cache.delete(key)
+    }
+    
+    return null
+  }
+
+  set(text: string, level: CEFRLevel, simplified: string, summary: string): void {
+    if (this.cache.size >= this.maxSize) {
+      // Remove oldest entries
+      const entries = Array.from(this.cache.entries())
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
+      for (let i = 0; i < Math.floor(this.maxSize * 0.2); i++) {
+        this.cache.delete(entries[i][0])
+      }
+    }
+
+    const key = this.generateKey(text, level)
+    this.cache.set(key, {
+      originalText: text,
+      level,
+      simplified,
+      summary,
+      timestamp: Date.now()
+    })
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+}
+
+// Global cache instance
+const textCache = new TextCache()
+
+// AI Session Pool Manager
+class AISessionManager {
+  private sessionPool: AISessionPool = {
+    languageModel: [],
+    summarizer: [],
+    writer: []
+  }
+  private maxPoolSize = 3
+  private sessionTimeout = 30000 // 30 seconds
+
+  async getLanguageModelSession(): Promise<any> {
+    if (this.sessionPool.languageModel.length > 0) {
+      return this.sessionPool.languageModel.pop()
+    }
+    return await createLanguageModelSession({
+      initialPrompts: [{ role: 'system', content: 'You are a text simplification assistant.' }],
+      temperature: 0.7,
+      topK: 40
+    })
+  }
+
+  async getSummarizerSession(): Promise<any> {
+    if (this.sessionPool.summarizer.length > 0) {
+      return this.sessionPool.summarizer.pop()
+    }
+    return await createSummarizerSession({
+      type: 'tl;dr',
+      format: 'plain-text',
+      length: 'short'
+    })
+  }
+
+  async getWriterSession(): Promise<any> {
+    if (this.sessionPool.writer.length > 0) {
+      return this.sessionPool.writer.pop()
+    }
+    return await createWriterSession({
+      format: 'plain-text',
+      tone: 'formal'
+    })
+  }
+
+  returnSession(session: any, type: 'languageModel' | 'summarizer' | 'writer'): void {
+    if (this.sessionPool[type].length < this.maxPoolSize) {
+      this.sessionPool[type].push(session)
+      // Auto-cleanup after timeout
+      setTimeout(() => {
+        const index = this.sessionPool[type].indexOf(session)
+        if (index !== -1) {
+          this.sessionPool[type].splice(index, 1)
+          try {
+            session.destroy()
+          } catch (e) {
+            console.warn('Session cleanup error:', e)
+          }
+        }
+      }, this.sessionTimeout)
+    } else {
+      try {
+        session.destroy()
+      } catch (e) {
+        console.warn('Session cleanup error:', e)
+      }
+    }
+  }
+
+  cleanup(): void {
+    Object.values(this.sessionPool).forEach(sessions => {
+      sessions.forEach((session: any) => {
+        try {
+          session.destroy()
+        } catch (e) {
+          console.warn('Session cleanup error:', e)
+        }
+      })
+      sessions.length = 0
+    })
+  }
+}
+
+// Global session manager
+const sessionManager = new AISessionManager()
 
 // AI API Access Methods Interface
 interface AIAPIAccess {
@@ -337,6 +500,107 @@ async function createWriterSession(options: any = {}) {
   throw new Error('Writer.create method not found')
 }
 
+// Batch processing function for multiple texts
+export async function simplifyTextsBatch(
+  requests: BatchRequest[], 
+  settings: UserSettings,
+  onProgress?: (completed: number, total: number) => void
+): Promise<BatchResponse[]> {
+  const results: BatchResponse[] = []
+  const capabilities = await checkAICapabilities()
+
+  if (!capabilities.languageModel) {
+    return requests.map(req => ({
+      id: req.id,
+      success: false,
+      error: getAIErrorMessage('api-unavailable', getChromeVersion())
+    }))
+  }
+
+  // Sort by priority (1 = highest, 3 = lowest)
+  const sortedRequests = requests.sort((a, b) => a.priority - b.priority)
+  
+  // Process in chunks to avoid overwhelming the system
+  const chunkSize = 5
+  let completed = 0
+
+  for (let i = 0; i < sortedRequests.length; i += chunkSize) {
+    const chunk = sortedRequests.slice(i, i + chunkSize)
+    const chunkPromises = chunk.map(async (request) => {
+      try {
+        // Check cache first
+        const cached = textCache.get(request.text, settings.level)
+        if (cached) {
+          console.log(`[Cache Hit] Using cached result for text: ${request.text.slice(0, 50)}...`)
+          return {
+            id: request.id,
+            success: true,
+            data: {
+              simplified: cached.simplified,
+              summary: cached.summary,
+              originalText: cached.originalText
+            }
+          }
+        }
+
+        // Process with AI
+        const result = await simplifyTextAI(request.text, settings)
+        
+        // Cache the result
+        textCache.set(request.text, settings.level, result.simplified, result.summary || '')
+        
+        return {
+          id: request.id,
+          success: true,
+          data: result
+        }
+      } catch (error) {
+        console.error(`Batch processing error for request ${request.id}:`, error)
+        return {
+          id: request.id,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }
+    })
+
+    const chunkResults = await Promise.all(chunkPromises)
+    results.push(...chunkResults)
+    completed += chunk.length
+
+    if (onProgress) {
+      onProgress(completed, requests.length)
+    }
+
+    // Small delay between chunks to prevent overwhelming
+    if (i + chunkSize < sortedRequests.length) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+  }
+
+  return results
+}
+
+// Enhanced single text processing with caching
+export async function simplifyTextAIFast(text: string, settings: UserSettings): Promise<SimplificationResponse> {
+  // Check cache first
+  const cached = textCache.get(text, settings.level)
+  if (cached) {
+    console.log(`[Cache Hit] Using cached result for: ${text.slice(0, 50)}...`)
+    return {
+      simplified: cached.simplified,
+      summary: cached.summary,
+      originalText: cached.originalText
+    }
+  }
+
+  // Process with AI and cache result
+  const result = await simplifyTextAI(text, settings)
+  textCache.set(text, settings.level, result.simplified, result.summary || '')
+  
+  return result
+}
+
 // Chrome Built-in AI Implementation
 export async function simplifyTextAI(text: string, settings: UserSettings): Promise<SimplificationResponse> {
   let session: any = null
@@ -359,29 +623,22 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
       }
     }
 
-    console.log('[AI] Creating LanguageModel session...')
-    // Use unified API wrapper for text simplification
-    session = await createLanguageModelSession({
-      initialPrompts: [{ role: 'system', content: buildSimplificationPrompt(settings.level) }],
-      temperature: 0.7,
-      topK: 40
-    })
-    console.log('[AI] Session created successfully')
+    console.log('[AI] Getting LanguageModel session from pool...')
+    // Use session pool for better performance
+    session = await sessionManager.getLanguageModelSession()
+    console.log('[AI] Session acquired successfully')
 
     console.log('[AI] Sending prompt to AI model...')
-    const simplified = await session.prompt(`Simplify this text to ${settings.level} CEFR level: "${text}"`)
+    const prompt = `${buildSimplificationPrompt(settings.level)}\n\nText to simplify: "${text}"`
+    const simplified = await session.prompt(prompt)
     console.log('[AI] Received simplified text (first 100 chars):', simplified.substring(0, 100))
 
     let summary = ''
     if (capabilities.summarizer) {
       try {
-        console.log('[AI] Creating Summarizer session...')
-        // Use unified API wrapper for summary
-        summarizer = await createSummarizerSession({
-          type: 'tl;dr',
-          format: 'plain-text',
-          length: 'short'
-        })
+        console.log('[AI] Getting Summarizer session from pool...')
+        // Use session pool for better performance
+        summarizer = await sessionManager.getSummarizerSession()
         console.log('[AI] Generating summary...')
         summary = await summarizer.summarize(simplified)
         console.log('[AI] Summary generated:', summary)
@@ -422,12 +679,12 @@ export async function simplifyTextAI(text: string, settings: UserSettings): Prom
     
     throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
-    // Cleanup resources
+    // Return sessions to pool instead of destroying
     try {
-      if (session) session.destroy()
-      if (summarizer) summarizer.destroy()
+      if (session) sessionManager.returnSession(session, 'languageModel')
+      if (summarizer) sessionManager.returnSession(summarizer, 'summarizer')
     } catch (cleanupError) {
-      console.warn('Resource cleanup error:', cleanupError)
+      console.warn('Session return error:', cleanupError)
     }
   }
 }
@@ -452,12 +709,9 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
       }
     }
 
-    console.log('[AI] Creating Writer session for quiz generation...')
-    // Use unified API wrapper for quiz generation
-    session = await createWriterSession({
-      format: 'plain-text',
-      tone: 'formal'
-    })
+    console.log('[AI] Getting Writer session from pool...')
+    // Use session pool for better performance
+    session = await sessionManager.getWriterSession()
     console.log('[AI] Writer session created')
 
     const prompt = buildQuizPrompt(text, settings.level)
@@ -500,11 +754,11 @@ export async function generateQuizAI(text: string, settings: UserSettings): Prom
     
     throw new Error(getAIErrorMessage('api-unavailable', getChromeVersion()))
   } finally {
-    // Cleanup resources
+    // Return session to pool instead of destroying
     try {
-      if (session) session.destroy()
+      if (session) sessionManager.returnSession(session, 'writer')
     } catch (cleanupError) {
-      console.warn('Resource cleanup error:', cleanupError)
+      console.warn('Session return error:', cleanupError)
     }
   }
 }
@@ -580,6 +834,31 @@ function parseQuizText(quizText: string, level: CEFRLevel): QuizQuestion[] {
   })
   
   return questions.slice(0, 3) // Limit to 3 questions
+}
+
+// Cache and session management functions
+export function clearTextCache(): void {
+  textCache.clear()
+  console.log('[Cache] Text cache cleared')
+}
+
+export function cleanupAISessions(): void {
+  sessionManager.cleanup()
+  console.log('[Sessions] All AI sessions cleaned up')
+}
+
+export function getCacheStats(): { size: number, maxSize: number } {
+  return {
+    size: (textCache as any).cache.size,
+    maxSize: (textCache as any).maxSize
+  }
+}
+
+// Initialize cleanup on page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    cleanupAISessions()
+  })
 }
 
 // generateQuizLocal removed - extension now requires Chrome's built-in AI Writer API
