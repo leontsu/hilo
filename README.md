@@ -284,35 +284,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-## 🎯 Roadmap
-
-### Phase 1 (Completed ✅)
-- [x] Chrome Built-in AI integration (Language Model, Summarizer, Writer APIs)
-- [x] AI-powered text simplification with context awareness
-- [x] Comprehension quiz generation using Writer API
-- [x] YouTube native caption integration with caching
-- [x] CEFR level configuration (A1-C1)
-- [x] Chrome storage integration with sync
-- [x] Performance optimizations (caption caching, session management)
-- [x] Usage statistics tracking
-- [x] AI capability detection and error handling
-
-### Phase 2 (In Progress 🔄)
-- [ ] Enhanced quiz features (difficulty adjustment, scoring)
-- [ ] Custom vocabulary lists and word tracking
-- [ ] Learning progress analytics
-- [ ] Export/import settings and progress data
-- [ ] Improved caption timing and synchronization
-
-### Phase 3 (Future 🎯)
-- [ ] Multi-language support expansion (beyond English)
-- [ ] Audio pronunciation assistance
-- [ ] Advanced learning analytics dashboard
-- [ ] Spaced repetition system for vocabulary
-- [ ] Community features and shared word lists
-- [ ] Support for stable Chrome release (when Built-in AI graduates from experimental)
-
 ## 💡 Inspiration
 
 Hilo was inspired by the need to make web content accessible to language learners at all levels. By requiring Chrome's Built-in AI capabilities, we provide truly privacy-respecting, context-aware language adaptation that runs entirely on your device. This approach helps users gradually improve their language skills while consuming authentic web content, without sending any data to external servers.
