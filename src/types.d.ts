@@ -212,6 +212,23 @@ export interface CEFRTestSettings {
   skipInitialTest?: boolean
 }
 
+export interface PageAdjustmentCacheEntry {
+  url: string
+  level: CEFRLevel
+  timestamp: number
+  adjustments: Array<{
+    nodeIndex: number
+    originalText: string
+    simplifiedText: string
+    nodeSelector?: string
+  }>
+  pageHash?: string // Optional hash of page content for invalidation
+}
+
+export interface PageAdjustmentCache {
+  [key: string]: PageAdjustmentCacheEntry // key format: `${url}:${level}`
+}
+
 export interface StartCEFRTestRequest {
   type: 'START_CEFR_TEST'
 }

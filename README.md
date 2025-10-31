@@ -95,7 +95,7 @@ Then load the extension from the `dist` folder as described above. Changes will 
 - **Access Settings**: Click the Hilo icon in Chrome's toolbar
 - **Choose Level**: Select your CEFR level (A1-C1)
 - **Toggle Extension**: Enable or disable Hilo functionality
-- **View Statistics**: See how many texts you've simplified (tracked in popup)
+- **View Statistics**: See how many texts you've simplified and quizzes you've completed (tracked in popup)
 - **AI Status**: Check if Chrome Built-in AI is properly configured
 
 ## ⚙️ Configuration
@@ -282,7 +282,7 @@ SOFTWARE.
 - [x] CEFR level configuration (A1-C1)
 - [x] Chrome storage integration with sync
 - [x] Performance optimizations and session management
-- [x] Usage statistics tracking
+- [x] Usage statistics tracking (simplifications and quizzes completed)
 - [x] AI capability detection and error handling
 
 ### Phase 2 (In Progress 🔄)

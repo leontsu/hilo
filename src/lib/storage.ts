@@ -1,4 +1,4 @@
-import type { UserSettings, CEFRLevel, UsageStatistics, CEFRTestSettings, CEFRTestResult } from '../types'
+import type { UserSettings, CEFRLevel, UsageStatistics, CEFRTestSettings, CEFRTestResult, PageAdjustmentCache, PageAdjustmentCacheEntry } from '../types'
 
 const DEFAULT_CEFR_TEST_SETTINGS: CEFRTestSettings = {
   hasCompletedTest: false,
@@ -197,4 +197,120 @@ export async function retakeTest(): Promise<void> {
   })
   
   console.log('[Storage] Enabled test retake')
+}
+
+// Page Adjustment Cache functions
+const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000 // 24 hours
+const MAX_CACHE_ENTRIES = 50 // Limit cache size
+
+function getCacheKey(url: string, level: CEFRLevel): string {
+  // Normalize URL by removing fragment and query params that don't affect content
+  const urlObj = new URL(url)
+  const normalizedUrl = `${urlObj.origin}${urlObj.pathname}`
+  return `${normalizedUrl}:${level}`
+}
+
+export async function getPageAdjustmentCache(): Promise<PageAdjustmentCache> {
+  try {
+    const result = await chrome.storage.local.get(['pageAdjustmentCache'])
+    return result.pageAdjustmentCache || {}
+  } catch (error) {
+    console.error('Error getting page adjustment cache:', error)
+    return {}
+  }
+}
+
+export async function savePageAdjustmentCache(cache: PageAdjustmentCache): Promise<void> {
+  try {
+    await chrome.storage.local.set({ pageAdjustmentCache: cache })
+  } catch (error) {
+    console.error('Error saving page adjustment cache:', error)
+    throw error
+  }
+}
+
+export async function getCachedPageAdjustment(url: string, level: CEFRLevel): Promise<PageAdjustmentCacheEntry | null> {
+  const cache = await getPageAdjustmentCache()
+  const key = getCacheKey(url, level)
+  const entry = cache[key]
+  
+  if (!entry) {
+    return null
+  }
+  
+  // Check if cache entry is expired
+  const now = Date.now()
+  if (now - entry.timestamp > CACHE_EXPIRY_MS) {
+    // Remove expired entry
+    delete cache[key]
+    await savePageAdjustmentCache(cache)
+    return null
+  }
+  
+  return entry
+}
+
+export async function setCachedPageAdjustment(
+  url: string, 
+  level: CEFRLevel, 
+  adjustments: PageAdjustmentCacheEntry['adjustments'],
+  pageHash?: string
+): Promise<void> {
+  const cache = await getPageAdjustmentCache()
+  const key = getCacheKey(url, level)
+  
+  // Clean up old entries if cache is too large
+  const entries = Object.entries(cache)
+  if (entries.length >= MAX_CACHE_ENTRIES) {
+    // Remove oldest entries (by timestamp)
+    const sortedEntries = entries.sort(([, a], [, b]) => a.timestamp - b.timestamp)
+    const entriesToRemove = sortedEntries.slice(0, entries.length - MAX_CACHE_ENTRIES + 1)
+    
+    for (const [keyToRemove] of entriesToRemove) {
+      delete cache[keyToRemove]
+    }
+  }
+  
+  cache[key] = {
+    url,
+    level,
+    timestamp: Date.now(),
+    adjustments,
+    pageHash
+  }
+  
+  await savePageAdjustmentCache(cache)
+  console.log(`[Storage] Cached page adjustment for ${url} at level ${level}`)
+}
+
+export async function clearPageAdjustmentCache(): Promise<void> {
+  try {
+    await chrome.storage.local.set({ pageAdjustmentCache: {} })
+    console.log('[Storage] Cleared page adjustment cache')
+  } catch (error) {
+    console.error('Error clearing page adjustment cache:', error)
+    throw error
+  }
+}
+
+export async function removeCachedPageAdjustment(url: string, level?: CEFRLevel): Promise<void> {
+  const cache = await getPageAdjustmentCache()
+  
+  if (level) {
+    // Remove specific level cache
+    const key = getCacheKey(url, level)
+    delete cache[key]
+  } else {
+    // Remove all levels for this URL
+    const urlObj = new URL(url)
+    const normalizedUrl = `${urlObj.origin}${urlObj.pathname}`
+    
+    for (const key in cache) {
+      if (key.startsWith(`${normalizedUrl}:`)) {
+        delete cache[key]
+      }
+    }
+  }
+  
+  await savePageAdjustmentCache(cache)
 }

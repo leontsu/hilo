@@ -691,7 +691,40 @@ class HiloContentScript {
     try {
       console.log('Starting optimized page level adjustment...')
       
-      // Check AI capabilities first
+      // Check cache first
+      const { getCachedPageAdjustment, setCachedPageAdjustment } = await import('../lib/storage')
+      const currentUrl = window.location.href
+      const cachedAdjustment = await getCachedPageAdjustment(currentUrl, settings.level)
+      
+      if (cachedAdjustment) {
+        console.log('Found cached page adjustment, applying directly...')
+        this.handleClear()
+        
+        // Apply cached adjustments
+        const allTextNodes = this.extractPageTextNodes()
+        const prioritizedNodes = this.prioritizeTextNodes(allTextNodes)
+        
+        for (const adjustment of cachedAdjustment.adjustments) {
+          // Find the corresponding node by index and text content
+          if (adjustment.nodeIndex < prioritizedNodes.length) {
+            const nodeInfo = prioritizedNodes[adjustment.nodeIndex]
+            if (nodeInfo.text.trim() === adjustment.originalText.trim()) {
+              this.applyAdjustmentToNode(
+                nodeInfo.node,
+                adjustment.originalText,
+                adjustment.simplifiedText
+              )
+              successCount++
+            }
+          }
+        }
+        
+        console.log(`Applied ${successCount} cached adjustments`)
+        this.showCompletionNotification(successCount, true) // true indicates from cache
+        return
+      }
+      
+      // Check AI capabilities for new adjustments
       console.log('Hilo: Checking AI capabilities before page adjustment:', this.aiCapabilities)
       if (!this.aiCapabilities.languageModel) {
         console.log('Hilo: AI Language Model not available, stopping page adjustment')
@@ -748,7 +781,13 @@ class HiloContentScript {
         }
       )
 
-      // Apply results to DOM
+      // Apply results to DOM and collect successful adjustments for caching
+      const adjustmentsToCache: Array<{
+        nodeIndex: number
+        originalText: string
+        simplifiedText: string
+      }> = []
+
       for (const result of results) {
         const requestInfo = batchRequests.find(req => req.id === result.id)
         if (requestInfo && result.success && result.data) {
@@ -757,12 +796,31 @@ class HiloContentScript {
             requestInfo.text, 
             result.data.simplified
           )
+          
+          // Store for caching
+          const nodeIndex = batchRequests.indexOf(requestInfo)
+          adjustmentsToCache.push({
+            nodeIndex,
+            originalText: requestInfo.text,
+            simplifiedText: result.data.simplified
+          })
+          
           successCount++
         } else {
           failCount++
           if (result.error) {
             console.warn('Failed to adjust node:', result.error)
           }
+        }
+      }
+
+      // Cache successful adjustments if we have any
+      if (adjustmentsToCache.length > 0) {
+        try {
+          await setCachedPageAdjustment(currentUrl, settings.level, adjustmentsToCache)
+          console.log(`Cached ${adjustmentsToCache.length} page adjustments for future use`)
+        } catch (error) {
+          console.warn('Failed to cache page adjustments:', error)
         }
       }
 
@@ -1042,7 +1100,7 @@ class HiloContentScript {
     }
   }
 
-  private showCompletionNotification(count?: number) {
+  private showCompletionNotification(count?: number, fromCache: boolean = false) {
     const notification = document.createElement('div')
     notification.className = 'levellens-notification'
     notification.style.cssText = `
@@ -1061,12 +1119,17 @@ class HiloContentScript {
       color: white;
     `
     
+    const title = fromCache ? '⚡ Instant Load from Cache!' : '⚡ Fast Processing Complete!'
+    const details = fromCache 
+      ? `Applied ${count} cached adjustments instantly. `
+      : `Adjusted ${count} sections with AI${count && count > 0 ? ' and cached for next time' : ''}. `
+    
     notification.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 24px;">✅</span>
+        <span style="font-size: 24px;">${fromCache ? '🚀' : '✅'}</span>
         <div>
-          <div style="font-weight: 600; margin-bottom: 2px;">⚡ Fast Processing Complete!</div>
-          <div style="font-size: 12px; opacity: 0.95;">${count ? `Adjusted ${count} sections with AI cache. ` : ''}Click highlighted text to toggle</div>
+          <div style="font-weight: 600; margin-bottom: 2px;">${title}</div>
+          <div style="font-size: 12px; opacity: 0.95;">${count ? details : ''}Click highlighted text to toggle</div>
         </div>
       </div>
     `

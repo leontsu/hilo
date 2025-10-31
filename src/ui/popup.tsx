@@ -106,6 +106,20 @@ const PopupApp: React.FC = () => {
       const newSettings = { ...settings, [key]: value }
       await saveSettings({ [key]: value })
       setSettings(newSettings)
+      
+      // If the level changed, clear page adjustment cache for current tab
+      if (key === 'level') {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+          if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+            const { removeCachedPageAdjustment } = await import('../lib/storage')
+            await removeCachedPageAdjustment(tab.url, settings.level)
+            console.log('Cleared cached page adjustments due to level change')
+          }
+        } catch (error) {
+          console.warn('Failed to clear page adjustment cache:', error)
+        }
+      }
     } catch (error) {
       console.error('Error saving setting:', error)
     } finally {
